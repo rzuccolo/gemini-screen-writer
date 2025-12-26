@@ -31,7 +31,7 @@ WIDTH_DIALOGUE = 88.9       # ~3.5 inches wide
 WIDTH_ACTION = 0            # 0 means full width (up to right margin)
 
 def clean_text(text):
-    """Replaces Unicode characters with ASCII equivalents."""
+    """Replaces Unicode characters with ASCII equivalents and strips unsupported chars."""
     replacements = {
         '\u2018': "'", '\u2019': "'", # Smart Quotes
         '\u201c': '"', '\u201d': '"', # Smart Double Quotes
@@ -40,7 +40,9 @@ def clean_text(text):
     }
     for char, replacement in replacements.items():
         text = text.replace(char, replacement)
-    return text
+    
+    # Strip any characters that can't be represented in latin-1 (like emojis)
+    return text.encode('latin-1', 'ignore').decode('latin-1')
 
 class ScreenplayPDF(FPDF):
     def __init__(self, title="Screenplay"):
@@ -96,8 +98,10 @@ class ScriptParser:
                 elements.append({'type': ScriptParser.ELEMENT_SCENE, 'content': clean_line.upper()})
                 last_element = ScriptParser.ELEMENT_SCENE
                 
-            # 2. TRANSITION (CUT TO:)
-            elif clean_line.endswith('TO:') or clean_line.upper() == 'FADE OUT.' or clean_line.upper() == 'FADE IN:':
+            # 2. TRANSITION (CUT TO: / CORTA PARA:)
+            elif (clean_line.endswith('TO:') or 
+                  clean_line.endswith('PARA:') or 
+                  clean_line.upper() in ['FADE OUT.', 'FADE IN:']):
                 elements.append({'type': ScriptParser.ELEMENT_TRANSITION, 'content': clean_line.upper()})
                 last_element = ScriptParser.ELEMENT_TRANSITION
             
@@ -141,15 +145,27 @@ def publish_screenplay(project_path):
     # Look for cover data
     cover_path = os.path.join(project_path, "cover.md")
     title = "Untitled Screenplay"
-    author = "Gemini Screenwriter"
+    author = "Ricardo Zuccolo"
+    is_portuguese = False
     
     if os.path.exists(cover_path):
-        with open(cover_path, 'r') as f:
+        with open(cover_path, 'r', encoding='utf-8') as f:
             content = f.read()
+            # Detect language - more robust check
+            pt_markers = ["Português", "Linguagem:", "Sinopse", "Gênero", "Público-alvo", "Formato"]
+            content_upper = content.upper()
+            if any(m.upper() in content_upper for m in pt_markers):
+                # Extra check to avoid false positives with "Linguagem: English" (though rare in this flow)
+                if "PORTUGUÊS" in content_upper or "SINOPSE" in content_upper or "GÊNERO" in content_upper:
+                    is_portuguese = True
+                
             # Extract title if possible
             match = re.search(r'# (.*)', content)
             if match:
                 title = match.group(1).strip()
+    
+    # Strip markdown bold/italic markers from title
+    title = title.replace('**', '').replace('*', '')
     
     with open(script_path, 'r', encoding='utf-8') as f:
         raw_script = f.read()
@@ -165,7 +181,9 @@ def publish_screenplay(project_path):
     pdf.cell(0, 10, clean_text(title.upper()), new_x="LMARGIN", new_y="NEXT", align='C')
     pdf.ln(10)
     pdf.set_font('Courier', '', 12)
-    pdf.cell(0, 10, "Written by", new_x="LMARGIN", new_y="NEXT", align='C')
+    
+    written_by = "Escrito por" if is_portuguese else "Written by"
+    pdf.cell(0, 10, written_by, new_x="LMARGIN", new_y="NEXT", align='C')
     pdf.cell(0, 10, clean_text(author), new_x="LMARGIN", new_y="NEXT", align='C')
     
     pdf.add_page() # Begin Script

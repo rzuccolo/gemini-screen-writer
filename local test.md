@@ -1,3 +1,9 @@
-~/…/gemini-screen-writer $ source .venv/bin/activate && python3 writer.py "Create a 2-chapter story about a XXXXX."
+/Users/riczuccolo/antigravity/gemini-screen-writer/.venv/bin/python /Users/riczuccolo/antigravity/gemini-screen-writer/writer.py
 
-~/…/gemini-screen-writer $ source .venv/bin/activate && python3 publish.py output/BOOKNAME
+/Users/riczuccolo/antigravity/gemini-screen-writer/.venv/bin/python /Users/riczuccolo/antigravity/gemini-screen-writer/publish.py /Users/riczuccolo/antigravity/gemini-screen-writer/output/[PROJECT NAME]
+
+/Users/riczuccolo/antigravity/gemini-screen-writer/.venv/bin/python /Users/riczuccolo/antigravity/gemini-screen-writer/tools/export_fdx.py /Users/riczuccolo/antigravity/gemini-screen-writer/output/[PROJECT NAME]
+
+Escreva um curta-metragem de 5 paginas sobre um robô que quer pintar, em Portugues do Brasil, use uma liguagem que se identifica muito com uma audiencia jovem, use linguagem and girias atuais, popular do brasil, facil de entender
+
+Escreva um curta-metragem de 5 paginas sobre gato que é esquecido pela dona em casa no natal no estilo home alone, em Portugues do Brasil, use uma liguagem que se identifica muito com uma audiencia jovem, use linguagem and girias atuais, popular do brasil, facil de entender

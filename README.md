@@ -6,6 +6,7 @@ An autonomous agent powered by **Google's Gemini 3 Flash** model for creating in
 
 - 🤖 **Autonomous Screenwriting**: The agent plans and executes screenplay writing tasks independently.
 - 🎬 **Industry Standards**: Generates professional deliverables including Beat Sheets, Character Breakdowns, and formatted Scripts.
+- 🌎 **Multi-Language Support**: Specialized support for **Portuguese (Brazil)** screenwriting standards (e.g., `CORTA PARA:`).
 - 💬 **Interactive Mode**: Intelligent clarification system - calls `ask_user` when formats or genres are ambiguous (e.g., "Feature or Short?").
 - ⚡ **Real-Time Streaming**: See the agent's thinking and writing appear as it's generated.
 - 💾 **Smart Context Management**: Automatically compresses context when approaching token limits (1M window).

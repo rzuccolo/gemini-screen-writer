@@ -68,7 +68,9 @@ def export_to_fdx(project_path):
             clean_line = clean_line.upper()
             
         # TRANSITION
-        elif clean_line.endswith('TO:') or clean_line.upper() in ['FADE IN:', 'FADE OUT.']:
+        elif (clean_line.endswith('TO:') or 
+              clean_line.endswith('PARA:') or 
+              clean_line.upper() in ['FADE IN:', 'FADE OUT.']):
             fdx_type = "Transition"
             clean_line = clean_line.upper()
             
@@ -98,3 +100,10 @@ def export_to_fdx(project_path):
         
     print(f"Successfully exported Final Draft XML: {output_file}")
     return output_file
+
+if __name__ == "__main__":
+    import sys
+    if len(sys.argv) < 2:
+        print("Usage: python tools/export_fdx.py [project_folder]")
+    else:
+        export_to_fdx(sys.argv[1])
