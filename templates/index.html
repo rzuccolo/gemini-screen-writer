@@ -267,7 +267,12 @@
         <div class="modal">
             <div class="modal-header">
                 <h3 id="visualizer-title">File Preview</h3>
-                <button class="btn-outline" style="padding: 0.25rem 0.75rem;" onclick="closeVisualizer()">Close</button>
+                <div style="display:flex; gap:0.5rem;">
+                    <button id="copy-btn" class="btn-outline" style="padding: 0.25rem 0.75rem;"
+                        onclick="copyToClipboard()">📋 Copy</button>
+                    <button class="btn-outline" style="padding: 0.25rem 0.75rem;"
+                        onclick="closeVisualizer()">Close</button>
+                </div>
             </div>
             <div id="visualizer-content" class="console"
                 style="background: #1e293b; color: #f8fafc; overflow-x: auto; white-space: pre-wrap;">
@@ -284,6 +289,7 @@
         const startScreen = document.getElementById('start-screen');
         const interactionArea = document.getElementById('interaction-area');
         const userResponseInput = document.getElementById('user-response');
+        let currentFileContent = ""; // Store for copy functionality
 
         // --- LOAD PROJECTS ---
         async function loadProjects() {
@@ -314,13 +320,17 @@
                 let fdxBtn = `<button class="btn-outline" style="flex:1" onclick="exportFDX('${p.id}')">${p.has_fdx ? '💾 Re-Export' : '💾 Export FDX'}</button>`;
                 if (p.has_fdx) fdxBtn += `<button class="btn-outline" style="flex:0 0 auto; margin-left:5px;" onclick="openFile('${p.path}/${p.id}.fdx')">↗️</button>`;
 
+                let fountainBtn = `<button class="btn-outline" style="flex:1" onclick="exportFountain('${p.id}')">${p.has_fountain ? '⛲ Re-Export' : '⛲ Fountain'}</button>`;
+                if (p.has_fountain) fountainBtn += `<button class="btn-outline" style="flex:0 0 auto; margin-left:5px;" onclick="openFile('${p.path}/${p.id}.fountain')">↗️</button>`;
+
                 card.innerHTML = `
                 <span class="badge">${p.pages || '?'} Pages</span>
                 <h2>${p.title}</h2>
                 <p style="font-size: 0.9rem; opacity: 0.7; flex: 1; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">${p.logline}</p>
-                <div class="stats">
-                    <div style="display:flex; flex:1; gap:0;">${pdfBtn}</div>
-                    <div style="display:flex; flex:1; gap:0; margin-left: 10px;">${fdxBtn}</div>
+                <div class="stats" style="flex-wrap: wrap;">
+                    <div style="display:flex; flex:1; gap:0; min-width: 140px;">${pdfBtn}</div>
+                    <div style="display:flex; flex:1; gap:0; margin-left: 10px; min-width: 140px;">${fdxBtn}</div>
+                    <div style="display:flex; flex:1; gap:0; margin-left: 10px; min-width: 140px;">${fountainBtn}</div>
                 </div>
                 <!-- File Browser Section -->
                 <div id="files-${p.id}" class="file-list hidden" style="margin-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1rem;">
@@ -359,6 +369,7 @@
                 badge.innerText = f;
 
                 // Decide action based on extension
+                // Only PDF and FDX open externally now, Fountain opens in visualizer
                 if (f.endsWith('.pdf') || f.endsWith('.fdx')) {
                     badge.innerHTML += ' ↗️';
                     badge.onclick = (e) => { e.stopPropagation(); openFile(`output/${id}/${f}`); };
@@ -393,12 +404,19 @@
             const data = await res.json();
 
             if (data.success) {
+                currentFileContent = data.content; // Save for copying
+
                 if (filename.toLowerCase().endsWith('.md')) {
                     // Render Markdown
                     contentDiv.style.whiteSpace = "normal";
                     contentDiv.style.fontFamily = "'Inter', sans-serif";
                     contentDiv.style.lineHeight = "1.5";
                     contentDiv.innerHTML = marked.parse(data.content);
+                } else if (filename.toLowerCase().endsWith('.fountain')) {
+                    // Render Fountain (Monospace, preserved)
+                    contentDiv.style.whiteSpace = "pre-wrap";
+                    contentDiv.style.fontFamily = "'Courier Prime', monospace";
+                    contentDiv.innerText = data.content;
                 } else {
                     // Plain Text (Logs, etc)
                     contentDiv.style.whiteSpace = "pre-wrap";
@@ -412,6 +430,20 @@
 
         function closeVisualizer() {
             document.getElementById('visualizer-modal').style.display = 'none';
+        }
+
+        async function copyToClipboard() {
+            if (!currentFileContent) return;
+            try {
+                await navigator.clipboard.writeText(currentFileContent);
+                const btn = document.getElementById('copy-btn');
+                const originalText = btn.innerText;
+                btn.innerText = "✅ Copied!";
+                setTimeout(() => btn.innerText = originalText, 2000);
+            } catch (err) {
+                console.error('Failed to copy!', err);
+                alert('Failed to copy to clipboard');
+            }
         }
 
         // --- ACTIONS ---
@@ -436,6 +468,18 @@
             });
             const data = await res.json();
             if (data.success) { alert('Success! FDX export created.'); loadProjects(); }
+            else alert('Error: ' + data.error);
+        }
+
+        async function exportFountain(id) {
+            alert('Exporting Fountain... please wait.');
+            const res = await fetch('/export_fountain', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id })
+            });
+            const data = await res.json();
+            if (data.success) { alert('Success! Fountain export created.'); loadProjects(); }
             else alert('Error: ' + data.error);
         }
 

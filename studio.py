@@ -19,7 +19,7 @@ import queue
 import re
 from flask import Flask, render_template, request, jsonify
 from flask_socketio import SocketIO, emit
-from tools import export_fdx
+from tools import export_fdx, export_fountain
 from publish import publish_screenplay
 
 # --- CONFIGURATION ---
@@ -165,7 +165,8 @@ def list_projects():
                 "pages": page_count,
                 "path": path,
                 "has_pdf": os.path.exists(os.path.join(path, f"{name}_script.pdf")),
-                "has_fdx": os.path.exists(os.path.join(path, f"{name}.fdx"))
+                "has_fdx": os.path.exists(os.path.join(path, f"{name}.fdx")),
+                "has_fountain": os.path.exists(os.path.join(path, f"{name}.fountain"))
             })
             
     return jsonify(projects)
@@ -232,6 +233,17 @@ def run_export():
     path = os.path.join(OUTPUT_DIR, project_id)
     try:
         export_fdx.export_to_fdx(path)
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
+@app.route('/export_fountain', methods=['POST'])
+def run_export_fountain():
+    data = request.json
+    project_id = data.get('id')
+    path = os.path.join(OUTPUT_DIR, project_id)
+    try:
+        export_fountain.export_to_fountain(path)
         return jsonify({"success": True})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})

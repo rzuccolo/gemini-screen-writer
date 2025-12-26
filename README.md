@@ -9,6 +9,7 @@ An autonomous agent powered by **Google's Gemini 3 Flash** model for creating in
 - 🌎 **Multi-Language Support**: Specialized support for **Portuguese (Brazil)** screenwriting standards (e.g., `CORTA PARA:`).
 - 📄 **Professional PDF Publisher**: Converts Markdown to industry-standard Screenplay PDFs (Courier 12pt, correct margins, auto-localized).
 - 💾 **Final Draft Export**: Exports to `.fdx` format for professional editing in Final Draft or Celtx.
+- ⛲ **Fountain Export**: Exports to `.fountain` format for compatibility with Highland 2 and other plain-text screenwriting apps.
 - 💬 **Interactive Mode**: Intelligent clarification system - calls `ask_user` when formats or genres are ambiguous (e.g., "Feature or Short?").
 - ⚡ **Real-Time Streaming**: See the agent's thinking and writing appear as it's generated.
 
@@ -154,6 +155,7 @@ The agent understands and formats for:
 4.  **Script** (`script.md`): The actual screenplay formatted for industry recognition.
 5.  **PDF Script**: Generated via `publish.py`, uses Courier 12pt with industry-standard margins (Left 1.5", Right 1.0").
 6.  **FDX Export**: Generated via `tools/export_fdx.py`, compatible with Final Draft 12.
+7.  **Fountain Export**: Generated via `tools/export_fountain.py`.
 
 ## Technical Details
 
