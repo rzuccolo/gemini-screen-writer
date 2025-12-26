@@ -223,8 +223,9 @@ MIT License with Attribution Requirement - see [LICENSE](LICENSE) file for detai
 
 ## Credits
 
-- **Created by**: Pietro Schirano ([@Doriandarko](https://github.com/Doriandarko))
+- **Originally Created by**: Pietro Schirano ([@Doriandarko](https://github.com/Doriandarko))
+- **Enhanced Version by**: [@rzuccolo](https://github.com/rzuccolo) ([rzuccolo/gemini-book-writer](https://github.com/rzuccolo/gemini-book-writer))
 - **Powered by**: Google's Gemini 3 Flash model
-- **Repository**: https://github.com/Doriandarko/gemini-writer
+- **Original Repository**: https://github.com/Doriandarko/gemini-writer
 
 

@@ -1,6 +1,7 @@
 MIT License with Attribution Requirement
 
 Copyright (c) 2025 Pietro Schirano (@Doriandarko)
+Enhanced version Copyright (c) 2025 @rzuccolo
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -20,7 +21,8 @@ Pietro Schirano (@Doriandarko), in at least one of the following ways:
   - In the user interface or credits section
   - On the product's website or marketing materials
 Attribution should include the author's name and a link to the original 
-repository: https://github.com/Doriandarko/kimi-writer
+repository: https://github.com/Doriandarko/gemini-writer
+Enhanced repository: https://github.com/rzuccolo/gemini-book-writer
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,

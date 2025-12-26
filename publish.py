@@ -1,3 +1,10 @@
+"""
+Universal Publisher - Professional Book Production Tool
+Originally conceptualized by: Pietro Schirano (@Doriandarko)
+Enhanced and Implemented by: @rzuccolo
+
+Automates chapter merging, AI cover generation, and premium PDF layout.
+"""
 import os
 import sys
 import re

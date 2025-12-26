@@ -1,6 +1,8 @@
-#!/usr/bin/env python3
 """
 Gemini Writing Agent - An autonomous agent for creative writing tasks.
+
+Originally created by: Pietro Schirano (@Doriandarko)
+Enhanced version by: @rzuccolo
 
 This agent uses the Gemini 3 Flash model to create novels, books, 
 and short story collections based on user prompts.
