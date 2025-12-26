@@ -178,7 +178,8 @@ def publish_screenplay(project_path):
     # Title Page
     pdf.set_y(80)
     pdf.set_font('Courier', 'B', 24)
-    pdf.cell(0, 10, clean_text(title.upper()), new_x="LMARGIN", new_y="NEXT", align='C')
+    # Use multi_cell for title to allow wrapping
+    pdf.multi_cell(0, 10, clean_text(title.upper()), align='C', new_x="LMARGIN", new_y="NEXT")
     pdf.ln(10)
     pdf.set_font('Courier', '', 12)
     
@@ -232,7 +233,18 @@ def publish_screenplay(project_path):
     print(f"Successfully published Screenplay PDF: {output_filename}")
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print("Usage: python publish.py [project_folder]")
-    else:
-        publish_screenplay(sys.argv[1])
+    import argparse
+    
+    parser = argparse.ArgumentParser(
+        description="Gemini Screenplay Publisher - Convert markdown scripts to PDF",
+        epilog="Example: python publish.py output/m_missao_de_lila_curta"
+    )
+    
+    parser.add_argument(
+        'project_folder',
+        help='Path to the project folder containing script.md and cover.md'
+    )
+    
+    args = parser.parse_args()
+    
+    publish_screenplay(args.project_folder)

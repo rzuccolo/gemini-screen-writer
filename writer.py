@@ -76,8 +76,11 @@ Examples:
   # Interactive mode
   python writer.py
   
-  # Recovery mode from previous context
-  python writer.py --recover my_project/.context_summary_20250107_143022.md
+  # After generating, publish to PDF:
+  python publish.py output/your_project
+  
+  # Or export to Final Draft:
+  python tools/export_fdx.py output/your_project
         """
     )
     

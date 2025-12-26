@@ -102,8 +102,18 @@ def export_to_fdx(project_path):
     return output_file
 
 if __name__ == "__main__":
-    import sys
-    if len(sys.argv) < 2:
-        print("Usage: python tools/export_fdx.py [project_folder]")
-    else:
-        export_to_fdx(sys.argv[1])
+    import argparse
+    
+    parser = argparse.ArgumentParser(
+        description="Gemini Final Draft Exporter - Convert markdown scripts to FDX",
+        epilog="Example: python tools/export_fdx.py output/project_name"
+    )
+    
+    parser.add_argument(
+        'project_folder',
+        help='Path to the project folder containing script.md'
+    )
+    
+    args = parser.parse_args()
+    
+    export_to_fdx(args.project_folder)

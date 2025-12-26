@@ -7,11 +7,10 @@ An autonomous agent powered by **Google's Gemini 3 Flash** model for creating in
 - 🤖 **Autonomous Screenwriting**: The agent plans and executes screenplay writing tasks independently.
 - 🎬 **Industry Standards**: Generates professional deliverables including Beat Sheets, Character Breakdowns, and formatted Scripts.
 - 🌎 **Multi-Language Support**: Specialized support for **Portuguese (Brazil)** screenwriting standards (e.g., `CORTA PARA:`).
+- 📄 **Professional PDF Publisher**: Converts Markdown to industry-standard Screenplay PDFs (Courier 12pt, correct margins, auto-localized).
+- 💾 **Final Draft Export**: Exports to `.fdx` format for professional editing in Final Draft or Celtx.
 - 💬 **Interactive Mode**: Intelligent clarification system - calls `ask_user` when formats or genres are ambiguous (e.g., "Feature or Short?").
 - ⚡ **Real-Time Streaming**: See the agent's thinking and writing appear as it's generated.
-- 💾 **Smart Context Management**: Automatically compresses context when approaching token limits (1M window).
-- 🔄 **Recovery Mode**: Resume interrupted work from saved context summaries.
-- 📊 **Token Monitoring**: Real-time tracking of token usage with automatic optimization.
 
 ## Installation
 
@@ -52,29 +51,43 @@ GEMINI_API_KEY=your-api-key-here
 
 Get your Gemini API key from: https://aistudio.google.com/app/apikey
 
-## Usage
+### 1. Gemini Screenplay Studio (Web UI) **[NEW]**
 
-### Interactive Mode (Recommended)
+The easiest way to use the agent. A beautiful dashboard to manage projects, publish PDFs, and export FDX files.
 
-Run without arguments to start the interactive writer:
 ```bash
-uv run writer.py
-# or: python writer.py
+python studio.py
 ```
-*The agent will greet you and ask for your request. If you are vague (e.g., "Write a sci-fi movie"), it will ask clarifying questions about format, stats, etc.*
+*Then open http://localhost:5000 in your browser.*
 
-### One-Shot Prompt
+**New Studio Features:**
+- 👁️ **Visualizer**: Click any `.md` file (like `beat_sheet.md`) to view it instantly with proper Markdown formatting (bold, italics, headers).
+- ↗️ **Direct Open**: One-click opening for generated PDFs and FDX files.
 
-Run with an inline prompt if you know exactly what you want:
+
+### 2. CLI Workflow (Advanced)
+
+#### Write Step
+Run the interactive writer (recommended) or provide a prompt:
 ```bash
-uv run writer.py "Write a 90-page Horror Feature Film called 'The Deep'. Include a beat sheet."
+python writer.py
+# Or with a prompt
+python writer.py "Write a 90-page Horror Feature Film..."
 ```
 
-### Recovery Mode
+### 2. Publish Step (Generate Screenplay PDF)
 
-If the agent is interrupted or you want to continue previous work:
+Convert your project into a professional PDF with **Courier 12pt** and industry margins:
 ```bash
-uv run writer.py --recover output/my_project/.context_summary_20250107_143022.md
+python publish.py output/your_project_name
+```
+*Note: This step automatically detects the language and adjusts the title page (e.g., "Escrito por" for Portuguese scripts).*
+
+### 3. Export Step (Generate Final Draft .fdx)
+
+Export your script for professional editing:
+```bash
+python tools/export_fdx.py output/your_project_name
 ```
 
 ## How It Works
@@ -105,15 +118,24 @@ gemini-screen-writer/
 └── README.md             # This file
 
 # Generated Output:
-output/
-├── The_Deep_Project/     # Created by the agent
-│   ├── cover.md          # Title, Logline, Stats
-│   ├── characters.md     # Character Arcs
-│   ├── beat_sheet.md     # Structural Breakdown (Save the Cat)
-│   ├── script.md         # The Screenplay
-│   └── .context_summary_*.md
-└── ...
+### Project Structure (Artifacts)
+
 ```
+output/your_project/
+├── cover.md          # Title, Logline, Synopsis, Stats
+├── characters.md     # Detailed Character Breakdowns & Arcs
+├── beat_sheet.md     # Structural Breakdown (Acts I, II, III)
+├── script.md         # The Screenplay (Markdown)
+├── script.pdf        # Professional PDF (Generated via publish.py)
+└── script.fdx        # Final Draft Export (Generated via export_fdx.py)
+```
+
+## Multi-Language Support
+
+The system is optimized for **English** and **Portuguese (Brazil)**:
+*   **PT-BR**: Automatically uses `CORTA PARA:` for transitions and `Escrito por` for PDF title pages.
+*   **Accents**: Fully supports characters like `ã`, `ç`, `é` in both Markdown and PDF.
+*   **Emoji Safety**: Automatically strips emojis from PDF generation to prevent font crashes.
 
 ## Supported Formats
 
@@ -124,12 +146,14 @@ The agent understands and formats for:
 *   **Short Film** (5-40 pages)
 *   **Web Series** (5-15 pages)
 
-## Artifacts Generated
+## Artifacts Details
 
 1.  **Cover Page** (`cover.md`): Logline, synopsis, genre, title, and estimated stats.
-2.  **Beat Sheet** (`beat_sheet.md`): Full structural breakdown (Acts I, II, III).
-3.  **Character List** (`characters.md`): Descriptions, arcs, and traits.
-4.  **Script** (`script.md`): The actual screenplay in Markdown format (Scene Headings, Dialogue, Action).
+2.  **Beat Sheet** (`beat_sheet.md`): Full structural breakdown (Acts I, II, III) using "Save the Cat" or similar conventions.
+3.  **Character List** (`characters.md`): Descriptions, arcs, and traits for the entire cast.
+4.  **Script** (`script.md`): The actual screenplay formatted for industry recognition.
+5.  **PDF Script**: Generated via `publish.py`, uses Courier 12pt with industry-standard margins (Left 1.5", Right 1.0").
+6.  **FDX Export**: Generated via `tools/export_fdx.py`, compatible with Final Draft 12.
 
 ## Technical Details
 

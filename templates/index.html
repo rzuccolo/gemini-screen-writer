@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemini Screenplay Studio</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Courier+Prime&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card: #1e293b;
+            --text: #f8fafc;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --success: #10b981;
+            --danger: #ef4444;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 3rem;
+        }
+
+        h1 {
+            font-weight: 800;
+            font-size: 2rem;
+            letter-spacing: -1px;
+        }
+
+        .gradient-text {
+            background: linear-gradient(to right, #60a5fa, #c084fc);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .btn {
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn:hover {
+            background-color: var(--accent-hover);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--accent);
+            color: var(--accent);
+        }
+
+        .btn-outline:hover {
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        /* Grid */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .card {
+            background-color: var(--card);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: transform 0.2s;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card h2 {
+            margin-top: 0;
+            font-size: 1.25rem;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            font-size: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .stats {
+            margin-top: auto;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        /* Modal for Writer */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+
+        .modal {
+            background: var(--card);
+            width: 90%;
+            max-width: 800px;
+            height: 80vh;
+            border-radius: 1rem;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .modal-header {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .console {
+            flex: 1;
+            background: #000;
+            padding: 1rem;
+            font-family: 'Courier Prime', monospace;
+            overflow-y: auto;
+            font-size: 0.9rem;
+            color: #d1d5db;
+        }
+
+        .line {
+            margin-bottom: 0.25rem;
+        }
+
+        .input-area {
+            padding: 1rem;
+            background: var(--bg);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            display: none;
+            /* Hidden until needed */
+        }
+
+        .input-area.active {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .input-area input {
+            flex: 1;
+            background: var(--card);
+            border: 1px solid #374151;
+            padding: 0.75rem;
+            color: white;
+            border-radius: 0.5rem;
+        }
+
+        /* Start Screen inside Modal */
+        .start-screen {
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .start-screen textarea {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid #374151;
+            color: white;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            font-family: inherit;
+            resize: none;
+            margin-bottom: 1rem;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <header>
+            <h1>Gemini <span class="gradient-text">Screenplay Studio</span></h1>
+            <button class="btn" onclick="openWriter()">+ New Project</button>
+        </header>
+
+        <div id="project-grid" class="grid">
+            <!-- Projects will load here -->
+            <div style="grid-column: 1/-1; text-align: center; opacity: 0.5;">Loading projects...</div>
+        </div>
+    </div>
+
+    <!-- WRITER MODAL -->
+    <div id="writer-modal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Writer Console</h3>
+                <button class="btn-outline" style="padding: 0.25rem 0.75rem;" onclick="closeWriter()">Close</button>
+            </div>
+
+            <!-- Step 1: Prompt Input -->
+            <div id="start-screen" class="start-screen">
+                <p>Describe your movie idea:</p>
+                <textarea
+                    id="prompt-input">Escreva um curta-metragem de 5 paginas sobre um robô que quer pintar, em Portugues do Brasil, use uma liguagem que se identifica muito com uma audiencia jovem, use linguagem and girias atuais, popular do brasil, facil de entender</textarea>
+                <div style="display: flex; justify-content: flex-end; gap: 1rem;">
+                    <button class="btn-outline" onclick="startWriter(false)">Interactive Mode (Blank)</button>
+                    <button class="btn" onclick="startWriter(true)">Start Writing</button>
+                </div>
+            </div>
+
+            <!-- Step 2: Running Console -->
+            <div id="console-view" class="console hidden"></div>
+
+            <!-- Step 3: Input for Interaction -->
+            <div id="interaction-area" class="input-area">
+                <input type="text" id="user-response" placeholder="Type your answer..." onkeypress="handleEnter(event)">
+                <button class="btn" onclick="sendInput()">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- VISUALIZER MODAL -->
+    <div id="visualizer-modal" class="modal-overlay" onclick="if(event.target === this) closeVisualizer()">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="visualizer-title">File Preview</h3>
+                <button class="btn-outline" style="padding: 0.25rem 0.75rem;" onclick="closeVisualizer()">Close</button>
+            </div>
+            <div id="visualizer-content" class="console"
+                style="background: #1e293b; color: #f8fafc; overflow-x: auto; white-space: pre-wrap;">
+                Loading...
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script>
+        const socket = io();
+        const grid = document.getElementById('project-grid');
+        const consoleDiv = document.getElementById('console-view');
+        const startScreen = document.getElementById('start-screen');
+        const interactionArea = document.getElementById('interaction-area');
+        const userResponseInput = document.getElementById('user-response');
+
+        // --- LOAD PROJECTS ---
+        async function loadProjects() {
+            const res = await fetch('/projects');
+            const projects = await res.json();
+
+            grid.innerHTML = '';
+            if (projects.length === 0) {
+                grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; opacity: 0.5;">No projects found. Create one!</div>';
+                return;
+            }
+
+            projects.forEach(p => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.style.cursor = 'pointer';
+
+                // Toggle file browser on card click
+                card.onclick = (e) => {
+                    if (e.target.tagName === 'BUTTON') return;
+                    toggleFiles(p.id, card);
+                };
+
+                // Enhanced Buttons
+                let pdfBtn = `<button class="btn-outline" style="flex:1" onclick="publish('${p.id}')">${p.has_pdf ? '📄 Re-Publish' : '📄 Publish PDF'}</button>`;
+                if (p.has_pdf) pdfBtn += `<button class="btn-outline" style="flex:0 0 auto; margin-left:5px;" onclick="openFile('${p.path}/${p.id}_script.pdf')">↗️</button>`;
+
+                let fdxBtn = `<button class="btn-outline" style="flex:1" onclick="exportFDX('${p.id}')">${p.has_fdx ? '💾 Re-Export' : '💾 Export FDX'}</button>`;
+                if (p.has_fdx) fdxBtn += `<button class="btn-outline" style="flex:0 0 auto; margin-left:5px;" onclick="openFile('${p.path}/${p.id}.fdx')">↗️</button>`;
+
+                card.innerHTML = `
+                <span class="badge">${p.pages || '?'} Pages</span>
+                <h2>${p.title}</h2>
+                <p style="font-size: 0.9rem; opacity: 0.7; flex: 1; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">${p.logline}</p>
+                <div class="stats">
+                    <div style="display:flex; flex:1; gap:0;">${pdfBtn}</div>
+                    <div style="display:flex; flex:1; gap:0; margin-left: 10px;">${fdxBtn}</div>
+                </div>
+                <!-- File Browser Section -->
+                <div id="files-${p.id}" class="file-list hidden" style="margin-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1rem;">
+                    <small style="opacity:0.5; display:block; margin-bottom:0.5rem;">Project Files (Click to open):</small>
+                    <div class="files-container" style="display:flex; flex-wrap:wrap; gap:0.5rem;"></div>
+                </div>
+            `;
+                grid.appendChild(card);
+            });
+        }
+
+        // --- FILE BROWSER & OPEN ---
+        async function toggleFiles(id, card) {
+            const fileList = document.getElementById(`files-${id}`);
+            const container = fileList.querySelector('.files-container');
+
+            if (!fileList.classList.contains('hidden')) {
+                fileList.classList.add('hidden');
+                return;
+            }
+
+            container.innerHTML = 'Loading...';
+            fileList.classList.remove('hidden');
+
+            const res = await fetch(`/files/${id}`);
+            const files = await res.json();
+
+            container.innerHTML = '';
+            if (files.length === 0) container.innerHTML = 'Empty folder';
+
+            files.forEach(f => {
+                const badge = document.createElement('span');
+                badge.className = 'badge';
+                badge.style.cursor = 'pointer';
+                badge.style.background = 'rgba(59, 130, 246, 0.2)';
+                badge.innerText = f;
+
+                // Decide action based on extension
+                if (f.endsWith('.pdf') || f.endsWith('.fdx')) {
+                    badge.innerHTML += ' ↗️';
+                    badge.onclick = (e) => { e.stopPropagation(); openFile(`output/${id}/${f}`); };
+                } else {
+                    badge.innerHTML += ' 👁️';
+                    badge.onclick = (e) => { e.stopPropagation(); viewFile(`output/${id}/${f}`, f); };
+                }
+
+                container.appendChild(badge);
+            });
+        }
+
+        async function openFile(path) {
+            await fetch('/open', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ path })
+            });
+        }
+
+        async function viewFile(path, filename) {
+            document.getElementById('visualizer-modal').style.display = 'flex';
+            document.getElementById('visualizer-title').innerText = filename;
+            const contentDiv = document.getElementById('visualizer-content');
+            contentDiv.innerHTML = "Loading...";
+
+            const res = await fetch('/read', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ path })
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                if (filename.toLowerCase().endsWith('.md')) {
+                    // Render Markdown
+                    contentDiv.style.whiteSpace = "normal";
+                    contentDiv.style.fontFamily = "'Inter', sans-serif";
+                    contentDiv.style.lineHeight = "1.5";
+                    contentDiv.innerHTML = marked.parse(data.content);
+                } else {
+                    // Plain Text (Logs, etc)
+                    contentDiv.style.whiteSpace = "pre-wrap";
+                    contentDiv.style.fontFamily = "'Courier Prime', monospace";
+                    contentDiv.innerText = data.content;
+                }
+            } else {
+                contentDiv.innerText = "Error: " + data.error;
+            }
+        }
+
+        function closeVisualizer() {
+            document.getElementById('visualizer-modal').style.display = 'none';
+        }
+
+        // --- ACTIONS ---
+        async function publish(id) {
+            alert('Publishing PDF... please wait.');
+            const res = await fetch('/publish', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id })
+            });
+            const data = await res.json();
+            if (data.success) { alert('Success! PDF created.'); loadProjects(); }
+            else alert('Error: ' + data.error);
+        }
+
+        async function exportFDX(id) {
+            alert('Exporting FDX... please wait.');
+            const res = await fetch('/export', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id })
+            });
+            const data = await res.json();
+            if (data.success) { alert('Success! FDX export created.'); loadProjects(); }
+            else alert('Error: ' + data.error);
+        }
+
+        // --- WRITER ---
+        function openWriter() {
+            document.getElementById('writer-modal').style.display = 'flex';
+            startScreen.classList.remove('hidden');
+            consoleDiv.classList.add('hidden');
+            consoleDiv.innerHTML = '';
+        }
+
+        function closeWriter() {
+            document.getElementById('writer-modal').style.display = 'none';
+            loadProjects(); // Refresh content
+        }
+
+        function startWriter(usePrompt) {
+            const prompt = usePrompt ? document.getElementById('prompt-input').value : null;
+            startScreen.classList.add('hidden');
+            consoleDiv.classList.remove('hidden');
+
+            socket.emit('start_writer', { prompt });
+        }
+
+        // --- SOCKET LOGIC ---
+        socket.on('log', (msg) => {
+            // Convert ANSI colors to basic HTML or strip them
+            let text = msg.data.replace(/\[[0-9;]*m/g, '');
+            const line = document.createElement('div');
+            line.className = 'line';
+            line.innerText = text;
+            consoleDiv.appendChild(line);
+            consoleDiv.scrollTop = consoleDiv.scrollHeight;
+        });
+
+        socket.on('request_input', (msg) => {
+            interactionArea.classList.add('active');
+            userResponseInput.focus();
+            // Add question to log
+            const line = document.createElement('div');
+            line.className = 'line';
+            line.style.color = '#fbbf24';
+            line.innerText = "\n❓ " + msg.prompt;
+            consoleDiv.appendChild(line);
+            consoleDiv.scrollTop = consoleDiv.scrollHeight;
+        });
+
+        socket.on('writer_finished', () => {
+            const line = document.createElement('div');
+            line.className = 'line';
+            line.style.color = '#10b981';
+            line.innerHTML = '<br>✅ <b>TASK COMPLETED</b>. You can close this window.';
+            consoleDiv.appendChild(line);
+            consoleDiv.scrollTop = consoleDiv.scrollHeight;
+        });
+
+        function sendInput() {
+            const val = userResponseInput.value;
+            if (!val) return;
+
+            socket.emit('provide_input', { value: val });
+
+            // Echo to console
+            const line = document.createElement('div');
+            line.className = 'line';
+            line.style.opacity = '0.7';
+            line.innerText = "> " + val;
+            consoleDiv.appendChild(line);
+
+            userResponseInput.value = '';
+            interactionArea.classList.remove('active');
+        }
+
+        function handleEnter(e) {
+            if (e.key === 'Enter') sendInput();
+        }
+
+        // Init
+        loadProjects();
+
+    </script>
+</body>
+
+</html>
