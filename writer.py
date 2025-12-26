@@ -12,6 +12,7 @@ import os
 import sys
 import json
 import argparse
+import time
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
@@ -65,15 +66,18 @@ def get_user_input() -> tuple[str, bool]:
         Tuple of (prompt/context, is_recovery_mode)
     """
     parser = argparse.ArgumentParser(
-        description="Gemini Writing Agent - Create novels, books, and short stories",
+        description="Gemini Screenplay Writer - Create feature films, TV pilots, and shorts",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
   # Fresh start with inline prompt
-  python kimi-writer.py "Create a collection of sci-fi short stories"
+  python writer.py "Write a sci-fi feature film about time travel"
+  
+  # Interactive mode
+  python writer.py
   
   # Recovery mode from previous context
-  python kimi-writer.py --recover my_project/.context_summary_20250107_143022.md
+  python writer.py --recover my_project/.context_summary_20250107_143022.md
         """
     )
     
@@ -101,10 +105,10 @@ Examples:
     
     # Interactive prompt
     print("=" * 60)
-    print("Gemini Writing Agent")
+    print("Gemini Screenplay Writer")
     print("=" * 60)
     print("\nEnter your writing request (or 'quit' to exit):")
-    print("Example: Create a collection of 15 sci-fi short stories\n")
+    print("Example: Write a horror movie set on a submarine\n")
     
     prompt = input("> ").strip()
     
@@ -431,7 +435,12 @@ def main():
         
         except Exception as e:
             print(f"\n✗ Error during iteration {iteration}: {e}")
-            print(f"Attempting to continue...\n")
+            if "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e):
+                print("⚠️  Rate limit hit. Sleeping for 20 seconds...")
+                time.sleep(20)
+            else:
+                print(f"Attempting to continue in 5 seconds...\n")
+                time.sleep(5)
             continue
     
     # If we hit max iterations
