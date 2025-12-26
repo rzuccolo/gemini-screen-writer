@@ -94,17 +94,23 @@ Examples:
         type=str,
         help='Path to a context summary file to continue from'
     )
+    parser.add_argument(
+        '--author',
+        type=str,
+        default="Gemini Screen Writer by RZ",
+        help='The author name to display in the screenplay'
+    )
     
     args = parser.parse_args()
     
     # Check if recovery mode
     if args.recover:
         context = load_context_from_file(args.recover)
-        return context, True
+        return context, True, args.author
     
     # Check if prompt provided as argument
     if args.prompt:
-        return args.prompt, False
+        return args.prompt, False, args.author
     
     # Interactive prompt
     print("=" * 60)
@@ -123,7 +129,7 @@ Examples:
         print("Error: Empty prompt. Please provide a writing request.")
         sys.exit(1)
     
-    return prompt, False
+    return prompt, False, args.author
 
 
 def main():
@@ -131,9 +137,12 @@ def main():
     
     # Get API key
     api_key = os.getenv("GEMINI_API_KEY")
+    if api_key:
+        api_key = api_key.strip("'\"")
+    
     if not api_key:
         print("Error: GEMINI_API_KEY environment variable not set.")
-        print("Please set your API key: export GEMINI_API_KEY='your-key-here'")
+        print("Please set your API key in the .env file or Studio settings.")
         sys.exit(1)
     
     # Debug: Show that key is loaded (masked for security)
@@ -148,7 +157,7 @@ def main():
     print(f"✓ Gemini client initialized\n")
     
     # Get user input
-    user_prompt, is_recovery = get_user_input()
+    user_prompt, is_recovery, author_name = get_user_input()
     
     # Initialize contents list with raw Content objects
     # This preserves thought_signature and other metadata
@@ -159,8 +168,10 @@ def main():
         initial_message = f"[RECOVERED CONTEXT]\n\n{user_prompt}\n\n[END RECOVERED CONTEXT]\n\nPlease continue the work from where we left off."
         print("🔄 Recovery mode: Continuing from previous context\n")
     else:
-        initial_message = user_prompt
-        print(f"\n📝 Task: {user_prompt}\n")
+        # Inject author intent
+        initial_message = f"[AUTHOR: {author_name}]\n\n{user_prompt}"
+        print(f"\n📝 Task: {user_prompt}")
+        print(f"✍️  Author: {author_name}\n")
     
     contents.append(types.Content(
         role="user",

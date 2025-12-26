@@ -21,12 +21,36 @@ from flask import Flask, render_template, request, jsonify
 from flask_socketio import SocketIO, emit
 from tools import export_fdx, export_fountain
 from publish import publish_screenplay
+import webbrowser
+from dotenv import load_dotenv, set_key
 
 # --- CONFIGURATION ---
-OUTPUT_DIR = "output"
-app = Flask(__name__)
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
+
+# .env and output should be in the SAME FOLDER as the executable, not inside the bundle
+BASE_DIR = os.path.dirname(sys.executable) if getattr(sys, 'frozen', False) else os.path.dirname(__file__)
+DOTENV_PATH = os.path.join(BASE_DIR, '.env')
+OUTPUT_DIR = os.path.join(BASE_DIR, "output")
+
+app = Flask(__name__, 
+            template_folder=resource_path("templates"))
 app.config['SECRET_KEY'] = 'secret!'
 socketio = SocketIO(app, cors_allowed_origins="*")
+
+
+def check_has_api_key():
+    val = os.getenv("GEMINI_API_KEY")
+    if not val:
+        return False
+    return len(val.strip("'\" ").strip()) > 0
+
 
 # --- GLOBAL STATE ---
 input_queue = queue.Queue()
@@ -66,18 +90,9 @@ def web_input(prompt):
 tools.interaction.ask_user_impl = web_input
 
 # --- WRITER WRAPPER ---
-def run_writer_task(prompt=None):
+def run_writer_task(prompt=None, author=None):
     import writer
     
-    # Mock args
-    class Args:
-        prompt = None
-        recover = None
-    
-    args = Args()
-    if prompt:
-        args.prompt = prompt
-        
     try:
         # Directly call main logic, bypassing argparse parsing in main if possible,
         # but writer.main() parses args. Let's patch sys.argv instead.
@@ -85,8 +100,11 @@ def run_writer_task(prompt=None):
         sys.argv = ["writer.py"]
         if prompt:
             sys.argv.append(prompt)
+        if author:
+            sys.argv.extend(["--author", author])
             
         writer.main()
+
         
     except SystemExit:
         pass
@@ -200,6 +218,32 @@ def read_file_content():
     except Exception as e:
          return jsonify({"success": False, "error": str(e)})
 
+@app.route('/save_key', methods=['POST'])
+def save_api_key():
+    data = request.json
+    key = data.get('key')
+    if not key:
+        return jsonify({"success": False, "error": "No key provided"})
+    
+    # Sanitize: strip quotes and whitespace
+    key = key.strip("'\" ").strip()
+
+    
+    try:
+        # Save to .env
+        set_key(DOTENV_PATH, "GEMINI_API_KEY", key)
+        # Reload environment
+        load_dotenv(DOTENV_PATH, override=True)
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
+@app.route('/status')
+def get_status():
+    return jsonify({
+        "has_api_key": check_has_api_key()
+    })
+
 @app.route('/open', methods=['POST'])
 def open_file():
     data = request.json
@@ -253,11 +297,12 @@ def run_export_fountain():
 @socketio.on('start_writer')
 def handle_start_writer(data):
     prompt = data.get('prompt')
+    author = data.get('author')
     global writer_thread
     if writer_thread and writer_thread.is_alive():
         return # Already running
         
-    writer_thread = threading.Thread(target=run_writer_task, args=(prompt,))
+    writer_thread = threading.Thread(target=run_writer_task, args=(prompt, author))
     writer_thread.daemon = True
     writer_thread.start()
 
@@ -268,4 +313,11 @@ def handle_input(data):
 
 if __name__ == '__main__':
     print("🎬 Gemini Screenplay Studio running on http://localhost:5000")
-    socketio.run(app, debug=True, port=5000)
+    
+    # Auto-open browser in a separate thread to avoid blocking
+    def open_browser():
+        webbrowser.open("http://localhost:5001")
+    
+    threading.Timer(1.5, open_browser).start()
+    
+    socketio.run(app, debug=True, port=5001)

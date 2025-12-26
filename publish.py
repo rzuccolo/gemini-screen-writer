@@ -145,7 +145,7 @@ def publish_screenplay(project_path):
     # Look for cover data
     cover_path = os.path.join(project_path, "cover.md")
     title = "Untitled Screenplay"
-    author = "Ricardo Zuccolo"
+    author = "Gemini Screen Writer by RZ"
     is_portuguese = False
     
     if os.path.exists(cover_path):
@@ -163,6 +163,13 @@ def publish_screenplay(project_path):
             match = re.search(r'# (.*)', content)
             if match:
                 title = match.group(1).strip()
+
+            # Extract author if possible
+            # Common patterns in our prompt: **Author**: [Name], **Escrito por**: [Name], **By**: [Name]
+            author_match = re.search(r'(?i)(?:Author|Escrito por|Written by|By)\s*:\s*(.*)', content)
+            if author_match:
+                author = author_match.group(1).strip().replace('**', '')
+
     
     # Strip markdown bold/italic markers from title
     title = title.replace('**', '').replace('*', '')

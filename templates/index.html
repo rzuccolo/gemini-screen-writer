@@ -222,8 +222,15 @@
 
     <div class="container">
         <header>
-            <h1>Gemini <span class="gradient-text">Screenplay Studio</span></h1>
-            <button class="btn" onclick="openWriter()">+ New Project</button>
+            <div style="display:flex; flex-direction:column;">
+                <h1>Gemini <span class="gradient-text">Screenplay Studio</span></h1>
+                <span style="opacity: 0.5; font-size: 0.8rem; margin-top: -5px;">Powering Screenwriters with AI
+                    v1.0</span>
+            </div>
+            <div style="display:flex; gap:1rem; align-items:center;">
+                <button class="btn-outline" onclick="openKeySetup()" style="padding: 0.5rem 1rem;">⚙️ API Key</button>
+                <button class="btn" onclick="openWriter()" style="padding: 0.5rem 1rem;">+ New Project</button>
+            </div>
         </header>
 
         <div id="project-grid" class="grid">
@@ -242,6 +249,14 @@
 
             <!-- Step 1: Prompt Input -->
             <div id="start-screen" class="start-screen">
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display:block; font-size: 0.85rem; opacity: 0.7; margin-bottom: 0.5rem;">Author
+                        Name:</label>
+                    <input type="text" id="author-input" value="Gemini Screen Writer by RZ"
+                        placeholder="Enter author name..."
+                        style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: #0f172a; color: white; outline: none;">
+                </div>
+
                 <p>Describe your movie idea:</p>
                 <textarea
                     id="prompt-input">Escreva um curta-metragem de 5 paginas sobre um robô que quer pintar, em Portugues do Brasil, use uma liguagem que se identifica muito com uma audiencia jovem, use linguagem and girias atuais, popular do brasil, facil de entender</textarea>
@@ -277,6 +292,34 @@
             <div id="visualizer-content" class="console"
                 style="background: #1e293b; color: #f8fafc; overflow-x: auto; white-space: pre-wrap;">
                 Loading...
+            </div>
+        </div>
+    </div>
+
+    <!-- API KEY MODAL -->
+    <div id="key-modal" class="modal-overlay" style="display:none; backdrop-filter: blur(5px); z-index: 2000;">
+        <div class="modal" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3>Gemini API Setup</h3>
+                <button class="btn-outline" style="padding: 0.25rem 0.75rem;" onclick="closeKeySetup()">Close</button>
+            </div>
+            <div style="padding: 1.5rem; text-align: center;">
+                <p style="margin-bottom: 1.5rem; opacity: 0.9;">To use the AI writer, you need a free Google Gemini API
+                    Key.</p>
+
+                <input type="password" id="api-key-input" placeholder="Paste your API key here..."
+                    style="width: 100%; padding: 0.85rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: #0f172a; color: white; margin-bottom: 1rem; outline: none;">
+
+                <button class="btn" style="width: 100%; margin-bottom: 1.5rem; padding: 0.85rem;" onclick="saveKey()"
+                    id="save-key-btn">Save API Key</button>
+
+                <div
+                    style="font-size: 0.85rem; padding: 1rem; background: rgba(59, 130, 246, 0.1); border-radius: 8px; border: 1px solid rgba(59, 130, 246, 0.2);">
+                    <p style="margin-bottom: 5px;"><strong>Don't have a key?</strong></p>
+                    <a href="https://aistudio.google.com/app/apikey" target="_blank"
+                        style="color: #60a5fa; text-decoration: none; font-weight: bold;">Get a free key from Google AI
+                        Studio ↗️</a>
+                </div>
             </div>
         </div>
     </div>
@@ -498,10 +541,11 @@
 
         function startWriter(usePrompt) {
             const prompt = usePrompt ? document.getElementById('prompt-input').value : null;
+            const author = document.getElementById('author-input').value || "Ricardo Zuccolo";
             startScreen.classList.add('hidden');
             consoleDiv.classList.remove('hidden');
 
-            socket.emit('start_writer', { prompt });
+            socket.emit('start_writer', { prompt, author });
         }
 
         // --- SOCKET LOGIC ---
@@ -557,8 +601,61 @@
             if (e.key === 'Enter') sendInput();
         }
 
+        // Logic for Key Setup
+        async function checkApiKey() {
+            const res = await fetch('/status');
+            const data = await res.json();
+            if (!data.has_api_key) {
+                openKeySetup();
+            }
+        }
+
+        function openKeySetup() {
+            document.getElementById('key-modal').style.display = 'flex';
+        }
+
+        function closeKeySetup() {
+            document.getElementById('key-modal').style.display = 'none';
+        }
+
+        async function saveKey() {
+            const key = document.getElementById('api-key-input').value.trim().replace(/^['"]|['"]$/g, '');
+            if (!key) return alert('Please enter a key');
+
+            const btn = document.getElementById('save-key-btn');
+            const original = btn.innerText;
+            btn.innerText = "Saving...";
+
+            try {
+                const res = await fetch('/save_key', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ key })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert('API Key saved successfully!');
+                    closeKeySetup();
+                    btn.innerText = original;
+                } else {
+                    alert('Error: ' + data.error);
+                    btn.innerText = original;
+                }
+            } catch (e) {
+                alert('Connection error');
+                btn.innerText = original;
+            }
+        }
+
         // Init
-        loadProjects();
+        document.addEventListener('DOMContentLoaded', () => {
+            try {
+                loadProjects();
+                checkApiKey();
+            } catch (e) {
+                console.error("Initialization failed:", e);
+            }
+        });
 
     </script>
 </body>

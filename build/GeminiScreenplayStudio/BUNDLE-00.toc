@@ -1,0 +1,3 @@
+([('GeminiScreenplayStudio',
+   '/Users/riczuccolo/antigravity/gemini-screen-writer/dist/GeminiScreenplayStudio',
+   'EXECUTABLE')],)
