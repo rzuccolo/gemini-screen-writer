@@ -104,6 +104,20 @@ def get_tool_definitions() -> types.Tool:
                     },
                     required=["question"]
                 )
+            ),
+            types.FunctionDeclaration(
+                name="perform_editorial_review",
+                description="Triggers a 'Virtual Editor' review. Reads the current generated files (script, beats, characters) and uses a separate AI persona to provide a critique/feedback list. Use this before finishing a task to ensure quality.",
+                parameters=types.Schema(
+                    type=types.Type.OBJECT,
+                    properties={
+                         "project_folder": types.Schema(
+                            type=types.Type.STRING,
+                            description="The folder name of the current project (e.g., 'the_dark_knight')."
+                        )
+                    },
+                    required=["project_folder"]
+                )
             )
         ]
     )
@@ -116,13 +130,14 @@ def get_tool_map() -> Dict[str, Callable]:
     Returns:
         Dictionary mapping tool name strings to callable functions
     """
-    from tools import write_file_impl, create_project_impl, compress_context_impl, ask_user_impl
+    from tools import write_file_impl, create_project_impl, compress_context_impl, ask_user_impl, editor
     
     return {
         "create_project": create_project_impl,
         "write_file": write_file_impl,
         "compress_context": compress_context_impl,
-        "ask_user": ask_user_impl
+        "ask_user": ask_user_impl,
+        "perform_editorial_review": editor.perform_editorial_review
     }
 
 
@@ -204,11 +219,18 @@ SCREENPLAY PROTOCOLS:
         *   **TRANSITIONS**: Use `CORTA PARA:` instead of `CUT TO:`.
         *   **Cover Page**: "Written by" can remain or use "Escrito por".
 
+7.  **EDITORIAL PHASE (MANDATORY)**
+    *   Once the script is drafted, you MUST call `perform_editorial_review(project_folder="...")`.
+    *   Read the critique.
+    *   **AUTO-CORRECT**: If the editor points out issues, fix them in the content using `write_file(mode='overwrite')`.
+    *   Only declare the task finished when you have addressed the notes.
+
 Your Workflow:
 1.  Analyze Request -> `ask_user` if vague.
 2.  `create_project`.
 3.  Write `cover.md` & `characters.md`.
 4.  Write `beat_sheet.md`.
 5.  Write the Script (`script.md`).
-6.  Review and Refine.
+6.  **Call `perform_editorial_review`.**
+7.  Refine based on feedback.
 """
