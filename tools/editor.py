@@ -27,8 +27,22 @@ def perform_editorial_review(project_folder: str) -> str:
     if os.path.isabs(project_folder):
         base_path = project_folder
     else:
-        # Default to output/ folder
-        base_path = os.path.join("output", project_folder)
+        # Consistency with project.py and studio.py
+        import sys
+        if getattr(sys, 'frozen', False):
+            base_data_dir = os.path.join(os.path.expanduser("~"), "Documents", "GeminiScreenplayStudio")
+        else:
+            # Development mode logic: Go up from tools/ to root
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            base_data_dir = os.path.dirname(script_dir) 
+            
+        base_path = os.path.join(base_data_dir, "output", project_folder)
+        
+        # Fallback for simple "output/name" strings passed by mistake
+        if not os.path.exists(base_path) and not project_folder.startswith("output"):
+             alt_path = os.path.join("output", project_folder)
+             if os.path.exists(alt_path):
+                 base_path = alt_path
     
     if not os.path.exists(base_path):
         return f"Error: Project folder not found at {base_path}"

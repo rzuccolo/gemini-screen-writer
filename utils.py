@@ -167,6 +167,7 @@ SCREENPLAY PROTOCOLS:
 2.  **DELIVERABLES & STRUCTURE**
     Always produce these files in order:
     
+
     A.  `cover.md`:
         *   **Title**
         *   **Format** (e.g., Feature Film)
@@ -174,8 +175,12 @@ SCREENPLAY PROTOCOLS:
         *   **Logline**: [Protagonist] faces [Inciting Incident], must [Objective] or else [Stakes].
         *   **Synopsis**: A compelling overview.
         *   **Estimated Stats**: Page count / Word count.
+    
+    B.  `prompt.md`:
+        *   Save the original user prompt exactly as received in this file.
 
-    B.  `beat_sheet.md`:
+    C.  `beat_sheet.md`:
+
         *   Full structural breakdown (Save the Cat or similar).
         *   **Act I** (Setup, Catalyst, Debate, Break into Two)
         *   **Act II** (Fun & Games, Midpoint, Bad Guys Close In, All is Lost)

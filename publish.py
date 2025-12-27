@@ -80,23 +80,33 @@ class ScriptParser:
         lines = text.split('\n')
         elements = []
         last_element = None
+        last_content = ""
         
         for line in lines:
             line = line.strip()
             if not line:
                 continue
                 
-            # Clean markdown bold/italics for processing checks
-            clean_line = line.replace('**', '').replace('*', '').strip()
+            # Clean markdown: bold, italic, headers
+            # Remove leading '#' sequences (headers)
+            clean_line = re.sub(r'^#+\s*', '', line)
+            clean_line = clean_line.replace('**', '').replace('*', '').strip()
+            
+            if not clean_line:
+                continue
             
             # 1. SCENE HEADING (INT./EXT.)
-            # Usually BOLD in our markdown: **INT. LOCATION - DAY**
-            if (clean_line.startswith('INT.') or 
-                clean_line.startswith('EXT.') or 
-                clean_line.startswith('INT/') or 
-                clean_line.startswith('EXT/')):
-                elements.append({'type': ScriptParser.ELEMENT_SCENE, 'content': clean_line.upper()})
+            # Regex for robust detection of INT./EXT. at start
+            if re.match(r'^(INT\.|EXT\.|INT/|EXT/|I/E\.|INT\s|EXT\s)', clean_line, re.IGNORECASE):
+                # Deduplication: If this scene heading is identical to the previous one, skip it.
+                # This fixes "Double Heading" bugs from some LLM outputs.
+                upper_content = clean_line.upper()
+                if last_element == ScriptParser.ELEMENT_SCENE and last_content == upper_content:
+                    continue
+                    
+                elements.append({'type': ScriptParser.ELEMENT_SCENE, 'content': upper_content})
                 last_element = ScriptParser.ELEMENT_SCENE
+                last_content = upper_content
                 
             # 2. TRANSITION (CUT TO: / CORTA PARA:)
             elif (clean_line.endswith('TO:') or 
@@ -105,30 +115,42 @@ class ScriptParser:
                 elements.append({'type': ScriptParser.ELEMENT_TRANSITION, 'content': clean_line.upper()})
                 last_element = ScriptParser.ELEMENT_TRANSITION
             
-            # 3. CHARACTER (ALL CAPS, usually centered logic, but here we detect strictly)
-            # In our markdown, characters are often **CHARACTER**
-            # If the previous element was Scene or Action, and this is short and CAPS...
-            elif (clean_line.isupper() and len(clean_line) < 50 and 
-                  last_element not in [ScriptParser.ELEMENT_DIALOGUE, ScriptParser.ELEMENT_PARENTHETICAL]):
-                elements.append({'type': ScriptParser.ELEMENT_CHARACTER, 'content': clean_line})
-                last_element = ScriptParser.ELEMENT_CHARACTER
-            
-            # 3b. PARENTHETICAL (starts with ()
-            elif clean_line.startswith('(') and clean_line.endswith(')'):
-                elements.append({'type': ScriptParser.ELEMENT_PARENTHETICAL, 'content': clean_line})
-                last_element = ScriptParser.ELEMENT_PARENTHETICAL
-                
-            # 4. DIALOGUE
-            # If previous was Character or Parenthetical, this is Dialogue
-            elif last_element in [ScriptParser.ELEMENT_CHARACTER, ScriptParser.ELEMENT_PARENTHETICAL]:
-                elements.append({'type': ScriptParser.ELEMENT_DIALOGUE, 'content': clean_line})
-                last_element = ScriptParser.ELEMENT_DIALOGUE
-                
-            # 5. ACTION (Default)
+            # 3. CHARACTER (ALL CAPS)
             else:
-                elements.append({'type': ScriptParser.ELEMENT_ACTION, 'content': clean_line})
-                last_element = ScriptParser.ELEMENT_ACTION
+                # Remove parentheticals for the uppercase check
+                clean_for_check = re.sub(r'\(.*?\)', '', clean_line).strip()
+                has_punctuation = clean_for_check.endswith(('.', '!', '?'))
                 
+                # Heuristics:
+                # 1. UPPERCASE
+                # 2. Length < 50
+                # 3. Not punctuation ending (avoids shouting)
+                # 4. Explicit Exclusion: Should not start with INT./EXT. (handled above, but safety check)
+                
+                if (clean_for_check.isupper() and len(clean_line) < 50 and 
+                    clean_line != "THE END" and
+                    not re.match(r'^(INT\.|EXT\.)', clean_line, re.IGNORECASE) and
+                    not has_punctuation):
+                    
+                    elements.append({'type': ScriptParser.ELEMENT_CHARACTER, 'content': clean_line})
+                    last_element = ScriptParser.ELEMENT_CHARACTER
+                
+                # 3b. PARENTHETICAL (starts with ()
+                elif clean_line.startswith('(') and clean_line.endswith(')'):
+                    elements.append({'type': ScriptParser.ELEMENT_PARENTHETICAL, 'content': clean_line})
+                    last_element = ScriptParser.ELEMENT_PARENTHETICAL
+                    
+                # 4. DIALOGUE
+                # If previous was Character or Parenthetical, this is Dialogue
+                elif last_element in [ScriptParser.ELEMENT_CHARACTER, ScriptParser.ELEMENT_PARENTHETICAL]:
+                    elements.append({'type': ScriptParser.ELEMENT_DIALOGUE, 'content': clean_line})
+                    last_element = ScriptParser.ELEMENT_DIALOGUE
+                    
+                # 5. ACTION (Default)
+                else:
+                    elements.append({'type': ScriptParser.ELEMENT_ACTION, 'content': clean_line})
+                    last_element = ScriptParser.ELEMENT_ACTION
+                    
         return elements
 
 def publish_screenplay(project_path):

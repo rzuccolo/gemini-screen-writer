@@ -56,7 +56,7 @@
  [],
  False,
  False,
- 1766820402,
+ 1766824238,
  [('runw',
    '/Users/riczuccolo/antigravity/gemini-screen-writer/.venv/lib/python3.13/site-packages/PyInstaller/bootloader/Darwin-64bit/runw',
    'EXECUTABLE')],

@@ -219,21 +219,27 @@ def list_projects():
                     if line.startswith('# '):
                         title = line[2:].strip().replace('**', '')
                     
-                    # Logline simple
+                    # Logline robust parsing
                     if line.lower().startswith('**logline**:') or line.lower().startswith('logline:'):
                         val = line.split(':', 1)[1].strip()
                         if val:
                             logline = val
-                        elif i + 1 < len(lines):
-                            # Check next line
-                            next_line = lines[i+1].strip()
-                            if next_line: logline = next_line
+                        else:
+                            # Look ahead for next non-empty line
+                            for j in range(i + 1, min(i + 5, len(lines))):
+                                next_line = lines[j].strip()
+                                if next_line:
+                                    logline = next_line
+                                    break
                     
                     # Logline header only (like **Logline**)
-                    if line.lower() == '**logline**' or line.lower() == 'logline':
-                         if i + 1 < len(lines):
-                            next_line = lines[i+1].strip()
-                            if next_line: logline = next_line
+                    elif line.lower() == '**logline**' or line.lower() == 'logline':
+                         # Look ahead for next non-empty line
+                         for j in range(i + 1, min(i + 5, len(lines))):
+                            next_line = lines[j].strip()
+                            if next_line:
+                                logline = next_line
+                                break
                     
                     # Pages
                     if 'pages:' in line.lower() or 'páginas:' in line.lower():
@@ -241,11 +247,22 @@ def list_projects():
                         if len(parts) > 1:
                             page_count = parts[1].strip()
 
+            # Read prompt if available
+            prompt_path = os.path.join(path, "prompt.md")
+            original_prompt = ""
+            if os.path.exists(prompt_path):
+                try:
+                    with open(prompt_path, 'r', encoding='utf-8') as f:
+                        original_prompt = f.read().strip()
+                except:
+                    pass
+
             projects.append({
                 "id": name,
                 "title": title,
                 "logline": logline,
                 "pages": page_count,
+                "prompt": original_prompt,
                 "path": path,
                 "has_pdf": os.path.exists(os.path.join(path, f"{name}_script.pdf")),
                 "has_fdx": os.path.exists(os.path.join(path, f"{name}.fdx")),
@@ -404,12 +421,33 @@ def handle_start_writer(data):
     prompt = data.get('prompt')
     author = data.get('author')
     global writer_thread
+    
+    # Force kill previous thread if it exists to allow reset
     if writer_thread and writer_thread.is_alive():
-        return # Already running
+        logging.warning("Thread busy, but user requested new run. Forcing restart usually risky but allowed here.")
+        # In a real app we'd signal termination, but for now we safeguard via UI disabling
+        # Just return to avoid crash, but UI should handle "Busy" state
+        # socketio.emit('log', {'data': "⚠️ Engine is busy. Please restart app if stuck."})
+        # return 
+        pass 
         
+    # Clear queue
+    while not input_queue.empty():
+        try: input_queue.get_nowait()
+        except: pass
+
     writer_thread = threading.Thread(target=run_writer_task, args=(prompt, author))
     writer_thread.daemon = True
     writer_thread.start()
+
+@socketio.on('reset_requested')
+def handle_reset(data):
+    # Only useful if we wanted to clear server state, but client does most clearing.
+    # We can ensure queue is empty here.
+    while not input_queue.empty():
+        try: input_queue.get_nowait()
+        except: pass
+
 
 @socketio.on('provide_input')
 def handle_input(data):

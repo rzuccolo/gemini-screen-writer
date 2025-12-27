@@ -172,6 +172,9 @@ def main():
         initial_message = f"[AUTHOR: {author_name}]\n\n{user_prompt}"
         print(f"\n📝 Task: {user_prompt}")
         print(f"✍️  Author: {author_name}\n")
+        
+        # Save prompt to memory for the agent to write later
+        # Actually, let's just make it a rule in the system prompt.
     
     contents.append(types.Content(
         role="user",

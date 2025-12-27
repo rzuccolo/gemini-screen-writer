@@ -325,7 +325,7 @@
                         rows="6">Escreva um curta-metragem de 5 paginas sobre um robô que quer pintar, em Portugues do Brasil, use uma liguagem que se identifica muito com uma audiencia jovem, use linguagem and girias atuais, popular do brasil, facil de entender</textarea>
                 </div>
                 <div style="display: flex; justify-content: flex-end; gap: 1rem;">
-                    <button class="btn-outline" onclick="startWriter(false)">Interactive Setup</button>
+                    <!-- Interactive mode temporarily removed for stability -->
                     <button class="btn" onclick="startWriter(true)">Start Writing Engine</button>
                 </div>
             </div>
@@ -397,7 +397,8 @@
                     card.innerHTML = `
                     <div class="badge">${p.pages || '?'} Pages</div>
                     <h2>${p.title}</h2>
-                    <p>${p.logline}</p>
+                    <p style="margin-bottom: 0.5rem; max-height: 4.2em; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;" title="${p.logline}">${p.logline}</p>
+                    ${p.prompt ? `<button class="btn-outline" style="font-size: 0.75rem; padding: 0.3rem 0.6rem; margin-bottom: 1rem; width: 100%; text-align: left; display: flex; align-items: center; gap: 0.5rem;" onclick="viewPrompt('${p.id}', this)" data-prompt="${p.prompt.replace(/"/g, '&quot;')}">💡 View Original Prompt</button>` : ''}
                     <div class="card-actions">
                         <button class="btn-outline" onclick="publish('${p.id}')">📄 PDF</button>
                         <button class="btn-outline" onclick="exportFDX('${p.id}')">💾 FDX</button>
@@ -441,6 +442,16 @@
                 }
                 container.appendChild(el);
             });
+        }
+
+        function viewPrompt(id, btn) {
+            const prompt = btn.getAttribute('data-prompt');
+            document.getElementById('visualizer-modal').style.display = 'flex';
+            document.getElementById('visualizer-title').innerText = "Original Prompt";
+            const contentDiv = document.getElementById('visualizer-content');
+            contentDiv.style.fontFamily = 'Inter';
+            contentDiv.style.whiteSpace = 'pre-wrap';
+            contentDiv.innerText = prompt;
         }
 
         async function viewFile(path, filename) {
@@ -507,8 +518,24 @@
         }
 
         // --- WRITER ---
-        function openWriter() { document.getElementById('writer-modal').style.display = 'flex'; }
-        function closeWriter() { document.getElementById('writer-modal').style.display = 'none'; loadProjects(); }
+        function openWriter() {
+            // Reset modal state fully
+            document.getElementById('writer-modal').style.display = 'flex';
+            document.getElementById('modal-title').innerText = "New Screenplay";
+            document.getElementById('start-screen').classList.remove('hidden');
+            document.getElementById('console-view').classList.add('hidden');
+            document.getElementById('console-view').innerHTML = '';
+            document.getElementById('interaction-area').classList.add('hidden');
+
+            // Clear inputs? Maybe keep Author, but clear Prompt
+            // document.getElementById('author-input').value = "Gemini Screen Writer"; // Keep preference
+            document.getElementById('prompt-input').value = "Escreva um curta-metragem de 5 paginas sobre um robô que quer pintar, em Portugues do Brasil, use uma liguagem que se identifica muito com uma audiencia jovem, use linguagem and girias atuais, popular do brasil, facil de entender";
+        }
+
+        function closeWriter() {
+            document.getElementById('writer-modal').style.display = 'none';
+            loadProjects();
+        }
 
         function startWriter(usePrompt) {
             document.getElementById('modal-title').innerText = "Gemini Engine Working...";
@@ -516,6 +543,9 @@
             const console = document.getElementById('console-view');
             console.classList.remove('hidden');
             console.innerHTML = '<div class="line">Initializing AI connection...</div>';
+
+            // Signal server to reset state
+            socket.emit('reset_requested', {});
 
             socket.emit('start_writer', {
                 prompt: usePrompt ? document.getElementById('prompt-input').value : null,
