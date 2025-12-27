@@ -42,3 +42,8 @@ Thumbs.db
 # Temporary files
 .context_summary_*.md
 
+
+# Build artifacts
+dist/
+build/
+*.spec

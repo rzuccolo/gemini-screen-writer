@@ -25,7 +25,6 @@ python3 -m PyInstaller --noconfirm --windowed \
     --name "GeminiScreenplayStudio" \
     --add-data "templates:templates" \
     --add-data "tools:tools" \
-    --add-data ".env:.env" \
     --collect-all flask_socketio \
     --collect-all engineio \
     --collect-all socketio \

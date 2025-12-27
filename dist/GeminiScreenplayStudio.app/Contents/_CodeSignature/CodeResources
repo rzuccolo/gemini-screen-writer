@@ -4,13 +4,9 @@
 <dict>
 	<key>files</key>
 	<dict>
-		<key>Resources/.env/.env</key>
-		<data>
-		KMM+uPnfawj5/DreCe/MWFeSCEc=
-		</data>
 		<key>Resources/base_library.zip</key>
 		<data>
-		STpbcEmQTDfcb9dW5XmGwmzs5Hk=
+		p1ZvxrElmqRT+PabNPoS3DAgBiA=
 		</data>
 		<key>Resources/certifi/cacert.pem</key>
 		<data>
@@ -1114,7 +1110,7 @@
 		</data>
 		<key>Resources/templates/index.html</key>
 		<data>
-		Xd5+YS8fqFvBhHWhW0qm7LRJyNs=
+		xo51ixZ0zty7pSuRJKCup1jglJo=
 		</data>
 		<key>Resources/tools/__init__.py</key>
 		<data>
@@ -1223,11 +1219,6 @@
 	</dict>
 	<key>files2</key>
 	<dict>
-		<key>Frameworks/.env</key>
-		<dict>
-			<key>symlink</key>
-			<string>../Resources/.env</string>
-		</dict>
 		<key>Frameworks/PIL/.dylibs</key>
 		<dict>
 			<key>symlink</key>
@@ -2159,13 +2150,6 @@
 			<key>symlink</key>
 			<string>../Resources/werkzeug-3.1.4.dist-info</string>
 		</dict>
-		<key>Resources/.env/.env</key>
-		<dict>
-			<key>hash2</key>
-			<data>
-			ZQVQxXUEi9NG1cF3zdsRczAlcDPutO8AQW1ASHGzZ3g=
-			</data>
-		</dict>
 		<key>Resources/PIL</key>
 		<dict>
 			<key>symlink</key>
@@ -2185,7 +2169,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			86N4EKsikIcUKPFjflnRE3yFzcUVaSfXzJchPDeC99Q=
+			Cm1Z4h+txGLkUOAFGRo/yyD/hEPX6DPyE9DwFC04eNY=
 			</data>
 		</dict>
 		<key>Resources/certifi/cacert.pem</key>
@@ -4222,7 +4206,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			1I9VpUPjP7GR9oEJGAuw1WDl62vaDc6E2WFmbAXMDzc=
+			upN8hqeD30s12wMlJe1szYTiAwiIro6U1Pr0FUcLF0A=
 			</data>
 		</dict>
 		<key>Resources/tools/__init__.py</key>

@@ -58,17 +58,21 @@ if getattr(sys, 'frozen', False):
     BASE_DATA_DIR = os.path.join(os.path.expanduser("~"), "Documents", "GeminiScreenplayStudio")
 else:
     BASE_DATA_DIR = os.path.dirname(os.path.abspath(__file__))
-
-    BASE_DATA_DIR = os.path.dirname(os.path.abspath(__file__))
-
 DOTENV_PATH = os.path.join(BASE_DATA_DIR, '.env')
 OUTPUT_DIR = os.path.join(BASE_DATA_DIR, "output")
 
-# Ensure the data directory exists
+# Ensure the directories and .env file exist
 if not os.path.exists(BASE_DATA_DIR):
-    os.makedirs(BASE_DATA_DIR)
+    os.makedirs(BASE_DATA_DIR, exist_ok=True)
 if not os.path.exists(OUTPUT_DIR):
-    os.makedirs(OUTPUT_DIR)
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
+if not os.path.exists(DOTENV_PATH):
+    with open(DOTENV_PATH, 'w') as f:
+        f.write("# Gemini API Key Store\n")
+
+# CRITICAL: Load the environment from the persistent location at startup
+logging.info(f"Loading environment from: {DOTENV_PATH}")
+load_dotenv(DOTENV_PATH, override=True)
 
 logging.info("--- Gemini Screenplay Studio Starting ---")
 logging.info(f"Data Directory: {BASE_DATA_DIR}")
@@ -90,9 +94,7 @@ except Exception as e:
     logging.critical(f"FATAL: Failed to create Flask App: {e}")
     raise e
 
-app.config['SECRET_KEY'] = 'secret!'
-
-app.config['SECRET_KEY'] = 'secret!'
+app.config['SECRET_KEY'] = 'gemini-studio-secret'
 
 # Initialize SocketIO with threading mode for stability in frozen app
 logging.info("Initializing SocketIO (threading mode)...")
@@ -111,7 +113,8 @@ def check_has_api_key():
     val = os.getenv("GEMINI_API_KEY")
     if not val:
         return False
-    return len(val.strip("'\" ").strip()) > 0
+    val = val.strip("'\" ").strip()
+    return len(val) > 0 and val.startswith("AIza")
 
 
 # --- GLOBAL STATE ---

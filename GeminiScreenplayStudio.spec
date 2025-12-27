@@ -1,7 +1,7 @@
 # -*- mode: python ; coding: utf-8 -*-
 from PyInstaller.utils.hooks import collect_all
 
-datas = [('templates', 'templates'), ('tools', 'tools'), ('.env', '.env')]
+datas = [('templates', 'templates'), ('tools', 'tools')]
 binaries = []
 hiddenimports = ['eventlet.hubs.epolls', 'eventlet.hubs.kqueue', 'eventlet.hubs.selects', 'dns.dnssec', 'engineio.async_drivers.threading']
 tmp_ret = collect_all('flask_socketio')
