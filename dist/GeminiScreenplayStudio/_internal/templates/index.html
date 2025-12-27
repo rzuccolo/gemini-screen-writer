@@ -38,6 +38,13 @@
 
         /* Standard Header */
         .header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(8px);
+            margin-top: -2rem;
+            padding-top: 2rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -244,14 +251,14 @@
         }
 
         .btn-shutdown {
-            margin-top: 1.5rem;
             background: transparent;
             color: #94a3b8;
             border: 1px solid #334155;
-            padding: 0.5rem 1.25rem;
-            border-radius: 2rem;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
             cursor: pointer;
             transition: all 0.2s;
+            font-weight: 500;
         }
 
         .btn-shutdown:hover {
@@ -273,16 +280,19 @@
             <div class="logo">
                 <span style="font-size: 2.5rem;">🎬</span>
                 <div>
-                    <h1>Gemini Screenplay Studio</h1>
-                    <p>AI-Powered Screenwriter</p>
+                    <h1 style="margin-bottom: 0.2rem;">Gemini Screenplay Studio</h1>
+                    <div style="font-size: 0.85rem; opacity: 0.8;">
+                        <span style="opacity: 0.5">Autosaving to:</span> <span
+                            style="font-family: 'Courier Prime', monospace; font-weight: 600;">~/Documents/GeminiScreenplayStudio</span>
+                    </div>
                 </div>
             </div>
-            <div style="display: flex; align-items: center; gap: 1.5rem;">
+            <div style="display: flex; align-items: center; gap: 1rem;">
                 <div class="api-status inactive" id="api-status">API: Loading...</div>
-                <button class="btn-outline" onclick="openKeySetup()">⚙️ API Config</button>
+                <button class="btn-outline" onclick="openKeySetup()">⚙️ Config</button>
                 <button class="btn" onclick="openWriter()">🚀 New Script</button>
                 <button class="btn-shutdown" onclick="quitApp()"
-                    style="margin-top:0; padding: 0.5rem 1rem; border-color: rgba(239, 68, 68, 0.5); font-size: 0.8rem;">🛑
+                    style="padding: 0.5rem 1rem; border-color: rgba(239, 68, 68, 0.5); font-size: 0.8rem;">🛑
                     Quit</button>
             </div>
         </div>
@@ -291,9 +301,6 @@
             <div style="grid-column: 1/-1; text-align: center; opacity: 0.5; padding: 4rem;">Loading gallery...</div>
         </div>
 
-        <div class="footer">
-            <p>Autosaving to: <b>~/Documents/GeminiScreenplayStudio</b></p>
-        </div>
     </div>
 
     <!-- WRITER MODAL -->
