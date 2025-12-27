@@ -6,7 +6,7 @@
 	<dict>
 		<key>Resources/base_library.zip</key>
 		<data>
-		p1ZvxrElmqRT+PabNPoS3DAgBiA=
+		BfJ574RcsCJchKq4SbY0QW8Co+E=
 		</data>
 		<key>Resources/certifi/cacert.pem</key>
 		<data>
@@ -1124,6 +1124,10 @@
 		<data>
 		zTFjKR9NAtM2855bRSaZ7xHukD0=
 		</data>
+		<key>Resources/tools/__pycache__/editor.cpython-313.pyc</key>
+		<data>
+		5h87cExfUtRDEYX/m/3omPbzkT0=
+		</data>
 		<key>Resources/tools/__pycache__/export_fdx.cpython-313.pyc</key>
 		<data>
 		9/Srh810/pprit/D7SAabzSmdPY=
@@ -1147,6 +1151,10 @@
 		<key>Resources/tools/compression.py</key>
 		<data>
 		l2vMM0IbnNIKVaZk/HErnmZgKgA=
+		</data>
+		<key>Resources/tools/editor.py</key>
+		<data>
+		bfMBuEofHKkUNF6XVOeLumWtL4Q=
 		</data>
 		<key>Resources/tools/export_fdx.py</key>
 		<data>
@@ -2169,7 +2177,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			Cm1Z4h+txGLkUOAFGRo/yyD/hEPX6DPyE9DwFC04eNY=
+			ECNSDavHNu0TzpuvGjDAstuNhJXRSjWROa0VV8aRi5g=
 			</data>
 		</dict>
 		<key>Resources/certifi/cacert.pem</key>
@@ -4230,6 +4238,13 @@
 			tWBJypuPFqGjlCXNyZ4v9avnCm+b9YvaUB2uvExtigU=
 			</data>
 		</dict>
+		<key>Resources/tools/__pycache__/editor.cpython-313.pyc</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			pSKl/KfJQTglxCe4soUvKUcULiFK66dTSiuX8h2LjSY=
+			</data>
+		</dict>
 		<key>Resources/tools/__pycache__/export_fdx.cpython-313.pyc</key>
 		<dict>
 			<key>hash2</key>
@@ -4270,6 +4285,13 @@
 			<key>hash2</key>
 			<data>
 			KYOrkuPFxOd8OSI39mo2OR2NVrPZz7MFPsSklcoH+Sg=
+			</data>
+		</dict>
+		<key>Resources/tools/editor.py</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			sw9r50Zfbk8s8k5oASicDdb8+/CYefgXbwb9pjKCeoc=
 			</data>
 		</dict>
 		<key>Resources/tools/export_fdx.py</key>

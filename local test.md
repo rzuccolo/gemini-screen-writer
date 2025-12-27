@@ -9,3 +9,6 @@ Escreva um curta-metragem de 5 paginas sobre um robô que quer pintar, em Portug
 Escreva um curta-metragem de 5 paginas sobre gato que é esquecido pela dona em casa no natal no estilo home alone, em Portugues do Brasil, use uma liguagem que se identifica muito com uma audiencia jovem, use linguagem and girias atuais, popular do brasil, facil de entender
 
 /Users/riczuccolo/antigravity/gemini-screen-writer/.venv/bin/python /Users/riczuccolo/antigravity/gemini-screen-writer/studio.py
+
+usually you just run ./distribute.sh
+
