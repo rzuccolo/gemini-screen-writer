@@ -1,0 +1,40 @@
+GEMINI SCREENPLAY STUDIO
+========================
+
+Thank you for downloading Gemini Screenplay Studio!
+This AI-powered tool helps you brainstorm, outline, and write feature films and TV pilots.
+
+INSTALLATION (First Time Only)
+------------------------------
+Because this app was not downloaded from the App Store, macOS requires a security override.
+
+1. Unzip the "GeminiScreenplayStudio" file.
+2. Open the "Terminal" app on your Mac (Cmd+Space, type "Terminal").
+3. Type the following command (but do not hit Enter yet):
+   xattr -cr 
+   (Notice the space after -cr)
+4. Drag and drop the "GeminiScreenplayStudio.app" onto the Terminal window.
+5. Hit Enter.
+
+Now you can double-click the app to run it!
+
+USAGE
+-----
+1. Double-click "GeminiScreenplayStudio".
+2. A website will open automatically: http://localhost:5001
+3. Click "API Key" to enter your Google Gemini API Key.
+4. Click "+ New Project" to start writing!
+
+QUITTING THE APP
+----------------
+To completely stop the background engine:
+31. Scroll to the top right of the dashboard.
+32. Click the "Quit" button (or use the button in the footer).
+3. Wait for the "System Offline" message, then close the tab.
+
+WHERE ARE MY FILES?
+-------------------
+All your screenplays are saved safely in:
+Documents > GeminiScreenplayStudio > output
+
+Enjoy writing!

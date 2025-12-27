@@ -1,48 +1,110 @@
 """
 Gemini Screenplay Studio - Web Dashboard
-
-A Flask-based web interface for:
-- Managing screenplay projects
-- Visualizing Markdown files with live rendering
-- Publishing professional PDFs with automatic wrapping
-- Exporting to Final Draft (.fdx)
-- Opening generated files directly
-
-Usage:
-    python studio.py
-    Then open http://localhost:5000
 """
 import os
 import sys
-import threading
-import queue
-import re
-from flask import Flask, render_template, request, jsonify
-from flask_socketio import SocketIO, emit
-from tools import export_fdx, export_fountain
-from publish import publish_screenplay
-import webbrowser
-from dotenv import load_dotenv, set_key
+import logging
+import traceback
+import time
+
+# Setup robust logging immediately
+
+# Setup production logging
+# We keep logging enabled to help diagnosis, but use a cleaner file name and less verbose level
+LOG_FILE = os.path.join(os.path.expanduser("~"), "gemini_screenplay_studio.log")
+logging.basicConfig(filename=LOG_FILE, level=logging.INFO, 
+                    format='%(asctime)s %(levelname)s: %(message)s')
+
+try:
+    logging.info("Importing threading/queue...")
+    import threading
+    import queue
+    import re
+    
+    logging.info("Importing Flask...")
+    from flask import Flask, render_template, request, jsonify
+    
+    logging.info("Importing SocketIO...")
+    from flask_socketio import SocketIO, emit
+    
+    logging.info("Importing Tools...")
+    from tools import export_fdx, export_fountain
+    
+    logging.info("Importing Publish...")
+    from publish import publish_screenplay
+    import webbrowser
+    from dotenv import load_dotenv, set_key
+    
+    logging.info("Imports complete. Initializing app...")
+except Exception as e:
+    logging.critical(f"FATAL: Import failed: {e}")
+    logging.critical(traceback.format_exc())
+    sys.exit(1)
 
 # --- CONFIGURATION ---
 def resource_path(relative_path):
     """ Get absolute path to resource, works for dev and for PyInstaller """
     try:
         # PyInstaller creates a temp folder and stores path in _MEIPASS
-        base_path = sys._MEIPASS
+        base_path = getattr(sys, '_MEIPASS', os.path.abspath("."))
     except Exception:
         base_path = os.path.abspath(".")
     return os.path.join(base_path, relative_path)
 
-# .env and output should be in the SAME FOLDER as the executable, not inside the bundle
-BASE_DIR = os.path.dirname(sys.executable) if getattr(sys, 'frozen', False) else os.path.dirname(__file__)
-DOTENV_PATH = os.path.join(BASE_DIR, '.env')
-OUTPUT_DIR = os.path.join(BASE_DIR, "output")
+# .env and output should be in a user-accessible folder, not inside the bundle
+if getattr(sys, 'frozen', False):
+    # For the shared app, we'll store data in the user's home folder
+    # This avoids all permission/read-only issues
+    BASE_DATA_DIR = os.path.join(os.path.expanduser("~"), "Documents", "GeminiScreenplayStudio")
+else:
+    BASE_DATA_DIR = os.path.dirname(os.path.abspath(__file__))
 
-app = Flask(__name__, 
-            template_folder=resource_path("templates"))
+    BASE_DATA_DIR = os.path.dirname(os.path.abspath(__file__))
+
+DOTENV_PATH = os.path.join(BASE_DATA_DIR, '.env')
+OUTPUT_DIR = os.path.join(BASE_DATA_DIR, "output")
+
+# Ensure the data directory exists
+if not os.path.exists(BASE_DATA_DIR):
+    os.makedirs(BASE_DATA_DIR)
+if not os.path.exists(OUTPUT_DIR):
+    os.makedirs(OUTPUT_DIR)
+
+logging.info("--- Gemini Screenplay Studio Starting ---")
+logging.info(f"Data Directory: {BASE_DATA_DIR}")
+
+
+# DEBUG: Check resource paths before init
+TEMPLATE_DIR = resource_path("templates")
+logging.info(f"TEMPLATE_DIR (Calculated): {TEMPLATE_DIR}")
+if not os.path.exists(TEMPLATE_DIR):
+    logging.critical(f"CRITICAL: Template directory does not exist at {TEMPLATE_DIR}")
+
+logging.info("Initializing Flask App...")
+try:
+    app = Flask(__name__, 
+                template_folder=TEMPLATE_DIR,
+                static_folder=TEMPLATE_DIR)
+    logging.info("Flask App Initialized successfully.")
+except Exception as e:
+    logging.critical(f"FATAL: Failed to create Flask App: {e}")
+    raise e
+
 app.config['SECRET_KEY'] = 'secret!'
-socketio = SocketIO(app, cors_allowed_origins="*")
+
+app.config['SECRET_KEY'] = 'secret!'
+
+# Initialize SocketIO with threading mode for stability in frozen app
+logging.info("Initializing SocketIO (threading mode)...")
+
+
+try:
+    socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
+    logging.info("SocketIO initialized successfully.")
+except Exception as e:
+    logging.critical(f"Failed to init SocketIO: {e}")
+    raise e
+
 
 
 def check_has_api_key():
@@ -204,19 +266,30 @@ def list_files(project_id):
 @app.route('/read', methods=['POST'])
 def read_file_content():
     data = request.json
-    path = data.get('path')
-    if OUTPUT_DIR not in path:
+    rel_path = data.get('path') # Expected as "output/project_id/filename.md" or just "project_id/filename.md"
+    
+    # Clean it up: remove leading "output/" if present
+    if rel_path.startswith('output/'):
+        rel_path = rel_path[7:]
+    
+    # Resolve to absolute path securely
+    abs_path = os.path.abspath(os.path.join(OUTPUT_DIR, rel_path))
+    
+    # Security check: must be inside OUTPUT_DIR
+    if not abs_path.startswith(os.path.abspath(OUTPUT_DIR)):
+        logging.warning(f"Access denied to path: {abs_path} (OUTPUT_DIR: {OUTPUT_DIR})")
         return jsonify({"success": False, "error": "Access denied"})
         
     try:
-        if path.endswith('.pdf') or path.endswith('.fdx'):
+        if abs_path.endswith('.pdf') or abs_path.endswith('.fdx'):
              return jsonify({"success": False, "error": "Cannot read binary files. Use Open button."})
              
-        with open(path, 'r', encoding='utf-8') as f:
+        with open(abs_path, 'r', encoding='utf-8') as f:
             content = f.read()
         return jsonify({"success": True, "content": content})
     except Exception as e:
          return jsonify({"success": False, "error": str(e)})
+
 
 @app.route('/save_key', methods=['POST'])
 def save_api_key():
@@ -247,17 +320,23 @@ def get_status():
 @app.route('/open', methods=['POST'])
 def open_file():
     data = request.json
-    path = data.get('path')
-    # Limit to opening inside output dir for safety (basic check)
-    if OUTPUT_DIR not in path:
+    rel_path = data.get('path')
+    
+    if rel_path.startswith('output/'):
+        rel_path = rel_path[7:]
+        
+    abs_path = os.path.abspath(os.path.join(OUTPUT_DIR, rel_path))
+    
+    if not abs_path.startswith(os.path.abspath(OUTPUT_DIR)):
         return jsonify({"success": False, "error": "Access denied"})
         
     try:
         # Mac 'open' command
-        subprocess.run(['open', path]) 
+        subprocess.run(['open', abs_path]) 
         return jsonify({"success": True})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
+
 
 @app.route('/publish', methods=['POST'])
 def run_publish():
@@ -265,10 +344,32 @@ def run_publish():
     project_id = data.get('id')
     path = os.path.join(OUTPUT_DIR, project_id)
     try:
-        publish_screenplay(path)
-        return jsonify({"success": True})
+        # Check if project exists
+        if not os.path.exists(path):
+            return jsonify({"success": False, "error": "Project not found"})
+        
+        # Run publish script logic directly
+        # We need to simulate the publishing logic. 
+        # The writer.py logic calls publish.py as a script.
+        # Let's import the function and run it.
+        pdf_path = publish_screenplay(path)
+        
+        return jsonify({"success": True, "pdf_path": pdf_path})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
+
+@app.route('/shutdown', methods=['POST'])
+def shutdown_app():
+    logging.info("Shutdown requested via UI.")
+    
+    # Schedule shutdown slightly delayed to allow response to return
+    def kill():
+        logging.info("Goodbye! Killing process...")
+        os._exit(0) # Force kill
+        
+    threading.Timer(1.0, kill).start()
+    return jsonify({"success": True, "message": "App is shutting down..."})
+
 
 @app.route('/export', methods=['POST'])
 def run_export():
@@ -292,6 +393,7 @@ def run_export_fountain():
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
 
+
 # --- SOCKET EVENTS ---
 
 @socketio.on('start_writer')
@@ -312,12 +414,32 @@ def handle_input(data):
     input_queue.put(response)
 
 if __name__ == '__main__':
-    print("🎬 Gemini Screenplay Studio running on http://localhost:5000")
-    
-    # Auto-open browser in a separate thread to avoid blocking
-    def open_browser():
-        webbrowser.open("http://localhost:5001")
-    
-    threading.Timer(1.5, open_browser).start()
-    
-    socketio.run(app, debug=True, port=5001)
+    try:
+        logging.info("--- Entering Main Loop ---")
+        print("🎬 Gemini Screenplay Studio running on http://localhost:5001")
+        
+        # Auto-open browser in a separate thread to avoid blocking
+        def open_browser():
+            webbrowser.open("http://localhost:5001")
+        
+        threading.Timer(1.5, open_browser).start()
+        
+        # Disable debug mode in production to prevent recursive restarts
+        is_frozen = getattr(sys, 'frozen', False)
+        
+        logging.info(f"Starting SocketIO server (frozen={is_frozen})...")
+        
+        # Force allow_unsafe_werkzeug=True for Mac app bundles to allow shutdown/restart if needed
+        # And ensure it blocks
+        socketio.run(app, debug=not is_frozen, port=5001, allow_unsafe_werkzeug=True)
+        
+        # If socketio.run returns, we keep the process alive manually just in case
+        logging.info("Server loop ended. Entering fallback keep-alive...")
+        while True:
+            time.sleep(1)
+
+    except Exception as e:
+
+        logging.critical("FATAL CRASH:")
+        logging.critical(traceback.format_exc())
+        sys.exit(1)

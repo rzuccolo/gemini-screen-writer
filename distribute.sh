@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Gemini Screenplay Studio - Distribute Script
-# This script helps package the app for non-programmers.
+# High Compatibility Version
 
 echo "🎬 Preparing Screenplay Studio for distribution..."
 
@@ -9,27 +9,37 @@ echo "🎬 Preparing Screenplay Studio for distribution..."
 if [ -d ".venv" ]; then
     echo "🐍 Using virtual environment..."
     source .venv/bin/activate
-else
-    echo "⚠️  No .venv found. Attempting with system python..."
 fi
 
-# 2. Ensure PyInstaller is installed
-if ! command -v pyinstaller &> /dev/null
-then
-    echo "📦 PyInstaller not found. Installing..."
-    python3 -m pip install pyinstaller
-fi
+# 2. Build the executable
+echo "🧹 Cleaning up old builds..."
+# Kill any running instances of the app to prevent file locking
+pkill -f GeminiScreenplayStudio || true
+pkill -f studio.py || true
+sleep 1
+rm -rf dist build
+mkdir -p dist
 
-# 3. Build the executable
-echo "🏗️ Building standalone executable..."
 
-python3 -m PyInstaller --noconfirm --onefile --windowed \
+python3 -m PyInstaller --noconfirm --windowed \
     --name "GeminiScreenplayStudio" \
     --add-data "templates:templates" \
     --add-data "tools:tools" \
+    --add-data ".env:.env" \
     --collect-all flask_socketio \
+    --collect-all engineio \
+    --collect-all socketio \
     --collect-all google.genai \
+    --collect-all google.api_core \
+    --hidden-import eventlet.hubs.epolls \
+    --hidden-import eventlet.hubs.kqueue \
+    --hidden-import eventlet.hubs.selects \
+    --hidden-import dns.dnssec \
+    --hidden-import="engineio.async_drivers.threading" \
     studio.py
 
-echo "✅ Build complete! Check the 'dist' folder for 'GeminiScreenplayStudio'."
-echo "📝 Note: Send your friend the 'dist/GeminiScreenplayStudio' file."
+echo "📄 copying instructions..."
+cp INSTRUCTIONS.txt dist/
+
+echo "✅ Build complete!"
+echo "📍 The app and instructions are in the 'dist' folder."

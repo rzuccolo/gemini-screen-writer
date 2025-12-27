@@ -59,7 +59,7 @@ The easiest way to use the agent. A beautiful dashboard to manage projects, publ
 ```bash
 python studio.py
 ```
-*Then open http://localhost:5000 in your browser.*
+*Then open http://localhost:5001 in your browser.*
 
 **New Studio Features:**
 - 👁️ **Visualizer**: Click any `.md` file (like `beat_sheet.md`) to view it instantly with proper Markdown formatting (bold, italics, headers).

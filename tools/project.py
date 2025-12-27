@@ -3,6 +3,7 @@ Project folder management tool.
 """
 
 import os
+import sys
 import re
 from typing import Optional
 
@@ -69,12 +70,18 @@ def create_project_impl(project_name: str) -> str:
     # Sanitize the folder name
     sanitized_name = sanitize_folder_name(project_name)
     
-    # Get the script's root directory (where kimi-writer.py is located)
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    root_dir = os.path.dirname(script_dir)  # Go up from tools/ to root
+    # Calculate output directory based on whether the app is frozen
+    if getattr(sys, 'frozen', False):
+        # Match the logic in studio.py for the shared app
+        base_data_dir = os.path.join(os.path.expanduser("~"), "Documents", "GeminiScreenplayStudio")
+    else:
+        # Development mode logic
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        base_data_dir = os.path.dirname(script_dir) # Go up from tools/ to root
+    
+    output_dir = os.path.join(base_data_dir, "output")
     
     # Create output directory if it doesn't exist
-    output_dir = os.path.join(root_dir, "output")
     if not os.path.exists(output_dir):
         try:
             os.makedirs(output_dir, exist_ok=True)
@@ -83,6 +90,7 @@ def create_project_impl(project_name: str) -> str:
     
     # Create the full path inside output directory
     project_path = os.path.join(output_dir, sanitized_name)
+
     
     # Check if folder already exists
     if os.path.exists(project_path):

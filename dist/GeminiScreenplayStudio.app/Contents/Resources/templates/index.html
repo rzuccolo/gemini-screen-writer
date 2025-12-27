@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemini Screenplay Studio</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Courier+Prime&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card: #1e293b;
+            --text: #f8fafc;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --success: #10b981;
+            --danger: #ef4444;
+            --border: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Standard Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 3rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 1.5rem;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo h1 {
+            font-weight: 800;
+            font-size: 1.5rem;
+            margin: 0;
+            letter-spacing: -0.5px;
+        }
+
+        .logo p {
+            margin: 0;
+            font-size: 0.8rem;
+            opacity: 0.6;
+        }
+
+        .btn {
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn:hover {
+            background-color: var(--accent-hover);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .btn-outline:hover {
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        .api-status {
+            font-size: 0.8rem;
+            font-weight: 600;
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .api-status.active {
+            color: var(--success);
+        }
+
+        .api-status.inactive {
+            color: var(--danger);
+        }
+
+        /* Project Grid */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 2rem;
+        }
+
+        .card {
+            background-color: var(--card);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            border: 1px solid var(--border);
+            transition: transform 0.2s, border-color 0.2s;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            border-color: var(--accent);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.2rem 0.6rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            font-size: 0.7rem;
+            margin-bottom: 0.8rem;
+            width: fit-content;
+        }
+
+        .card h2 {
+            margin: 0 0 0.5rem 0;
+            font-size: 1.25rem;
+        }
+
+        .card p {
+            font-size: 0.9rem;
+            opacity: 0.7;
+            line-height: 1.4;
+            margin-bottom: 1.5rem;
+            flex-grow: 1;
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: auto;
+            flex-wrap: wrap;
+        }
+
+        /* Modal Overlays */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal {
+            background: var(--card);
+            width: 90%;
+            max-width: 900px;
+            max-height: 90vh;
+            border-radius: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-header {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .console {
+            flex: 1;
+            background: #000;
+            padding: 1.5rem;
+            font-family: 'Courier Prime', monospace;
+            overflow-y: auto;
+            font-size: 0.9rem;
+            color: #ecf0f1;
+            line-height: 1.4;
+        }
+
+        .start-screen {
+            padding: 2.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        textarea {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border);
+            color: white;
+            padding: 1rem;
+            border-radius: 0.75rem;
+            font-family: inherit;
+            font-size: 1rem;
+            resize: none;
+            outline: none;
+        }
+
+        /* Footer Controls */
+        .footer {
+            margin-top: 5rem;
+            padding: 2rem 0;
+            text-align: center;
+            font-size: 0.85rem;
+            color: #64748b;
+            border-top: 1px solid var(--border);
+        }
+
+        .btn-shutdown {
+            margin-top: 1.5rem;
+            background: transparent;
+            color: #94a3b8;
+            border: 1px solid #334155;
+            padding: 0.5rem 1.25rem;
+            border-radius: 2rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-shutdown:hover {
+            color: var(--danger);
+            border-color: var(--danger);
+            background: rgba(239, 68, 68, 0.05);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <div class="header">
+            <div class="logo">
+                <span style="font-size: 2.5rem;">🎬</span>
+                <div>
+                    <h1>Gemini Screenplay Studio</h1>
+                    <p>AI-Powered Screenwriter</p>
+                </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 1.5rem;">
+                <div class="api-status inactive" id="api-status">API: Loading...</div>
+                <button class="btn-outline" onclick="openKeySetup()">⚙️ API Config</button>
+                <button class="btn" onclick="openWriter()">🚀 New Script</button>
+                <button class="btn-shutdown" onclick="quitApp()"
+                    style="margin-top:0; padding: 0.5rem 1rem; border-color: rgba(239, 68, 68, 0.5); font-size: 0.8rem;">🛑
+                    Quit</button>
+            </div>
+        </div>
+
+        <div id="project-grid" class="grid">
+            <div style="grid-column: 1/-1; text-align: center; opacity: 0.5; padding: 4rem;">Loading gallery...</div>
+        </div>
+
+        <div class="footer">
+            <p>Autosaving to: <b>~/Documents/GeminiScreenplayStudio</b></p>
+        </div>
+    </div>
+
+    <!-- WRITER MODAL -->
+    <div id="writer-modal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="modal-title">New Screenplay</h3>
+                <button class="btn-outline" onclick="closeWriter()">Close</button>
+            </div>
+
+            <div id="start-screen" class="start-screen">
+                <div>
+                    <label style="display:block; font-size: 0.85rem; margin-bottom: 0.5rem; opacity: 0.8;">Author
+                        Name:</label>
+                    <input type="text" id="author-input" value="Gemini Screen Writer by RZ"
+                        style="width: 100%; padding: 0.85rem; background: var(--bg); border: 1px solid var(--border); border-radius: 0.5rem; color: white;">
+                </div>
+                <div>
+                    <label style="display:block; font-size: 0.85rem; margin-bottom: 0.5rem; opacity: 0.8;">Prompt /
+                        Idea:</label>
+                    <textarea id="prompt-input"
+                        rows="6">Escreva um curta-metragem de 5 paginas sobre um robô que quer pintar, em Portugues do Brasil, use uma liguagem que se identifica muito com uma audiencia jovem, use linguagem and girias atuais, popular do brasil, facil de entender</textarea>
+                </div>
+                <div style="display: flex; justify-content: flex-end; gap: 1rem;">
+                    <button class="btn-outline" onclick="startWriter(false)">Interactive Setup</button>
+                    <button class="btn" onclick="startWriter(true)">Start Writing Engine</button>
+                </div>
+            </div>
+
+            <div id="console-view" class="console hidden"></div>
+
+            <div id="interaction-area" class="modal-header hidden"
+                style="border-top: 1px solid var(--border); gap: 1rem;">
+                <input type="text" id="user-response" placeholder="Answer AI question..."
+                    style="flex:1; padding: 0.75rem; background: var(--bg); border: 1px solid var(--border); border-radius: 0.4rem; color: white;"
+                    onkeypress="if(event.key === 'Enter') sendInput()">
+                <button class="btn" onclick="sendInput()">Reply</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- VISUALIZER MODAL -->
+    <div id="visualizer-modal" class="modal-overlay" onclick="if(event.target === this) closeVisualizer()">
+        <div class="modal" style="max-width: 800px; height: 80vh;">
+            <div class="modal-header">
+                <h3 id="visualizer-title">File Preview</h3>
+                <div style="display:flex; gap:0.5rem;">
+                    <button id="copy-btn" class="btn-outline" onclick="copyToClipboard()">📋 Copy</button>
+                    <button class="btn-outline" onclick="closeVisualizer()">Close</button>
+                </div>
+            </div>
+            <div id="visualizer-content" class="console" style="background: #1e293b; color: #f8fafc; font-size: 1rem;">
+            </div>
+        </div>
+    </div>
+
+    <!-- API KEY MODAL -->
+    <div id="key-modal" class="modal-overlay" style="z-index: 2000;">
+        <div class="modal" style="max-width: 480px;">
+            <div class="modal-header">
+                <h3>Gemini API Setup</h3>
+                <button class="btn-outline" onclick="closeKeySetup()">Close</button>
+            </div>
+            <div style="padding: 2.5rem; text-align: center;">
+                <p style="margin-bottom: 2rem;">Please enter your free Gemini API key to enable the writer engine.</p>
+                <input type="password" id="api-key-input" placeholder="Paste AIza... key here"
+                    style="width: 100%; padding: 1rem; border-radius: 0.5rem; border: 1px solid var(--border); background: var(--bg); color: white; margin-bottom: 1.5rem;">
+                <button class="btn" style="width: 100%;" onclick="saveKey()" id="save-key-btn">Save & Reload</button>
+                <div style="margin-top: 2rem; font-size: 0.85rem; opacity: 0.8;">
+                    <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color: var(--accent);">Get a
+                        free key here ↗️</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const socket = io();
+        const grid = document.getElementById('project-grid');
+        const apiStatus = document.getElementById('api-status');
+        let currentFileContent = "";
+
+        // --- DASHBOARD ---
+        async function loadProjects() {
+            try {
+                const res = await fetch('/projects');
+                const projects = await res.json();
+                grid.innerHTML = projects.length === 0 ?
+                    '<div style="grid-column: 1/-1; text-align: center; opacity: 0.5; padding: 4rem;">No scripts yet. Start your first masterpiece!</div>' : '';
+
+                projects.forEach(p => {
+                    const card = document.createElement('div');
+                    card.className = 'card';
+                    card.innerHTML = `
+                    <div class="badge">${p.pages || '?'} Pages</div>
+                    <h2>${p.title}</h2>
+                    <p>${p.logline}</p>
+                    <div class="card-actions">
+                        <button class="btn-outline" onclick="publish('${p.id}')">📄 PDF</button>
+                        <button class="btn-outline" onclick="exportFDX('${p.id}')">💾 FDX</button>
+                        <button class="btn-outline" onclick="exportFountain('${p.id}')">⛲ Fountain</button>
+                        <button class="btn-outline" onclick="toggleFiles('${p.id}', this)">📂 Browse</button>
+                    </div>
+                    <div id="files-${p.id}" class="hidden" style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border)">
+                        <div class="file-container" style="display:flex; flex-wrap:wrap; gap:0.5rem;"></div>
+                    </div>
+                `;
+                    grid.appendChild(card);
+                });
+            } catch (e) { grid.innerHTML = 'Error loading projects.'; }
+        }
+
+        async function toggleFiles(id, btn) {
+            const list = document.getElementById(`files-${id}`);
+            const container = list.querySelector('.file-container');
+            if (!list.classList.contains('hidden')) { list.classList.add('hidden'); return; }
+
+            container.innerHTML = '<small>Loading files...</small>';
+            list.classList.remove('hidden');
+
+            const res = await fetch(`/files/${id}`);
+            const files = await res.json();
+            container.innerHTML = '';
+
+            files.forEach(f => {
+                const el = document.createElement('div');
+                el.className = 'badge';
+                el.style.cursor = 'pointer';
+                el.style.background = 'rgba(59, 130, 246, 0.1)';
+                el.innerText = f;
+
+                if (f.endsWith('.pdf') || f.endsWith('.fdx')) {
+                    el.innerText += ' ↗️';
+                    el.onclick = () => fetch('/open', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ path: `output/${id}/${f}` }) });
+                } else {
+                    el.innerText += ' 👁️';
+                    el.onclick = () => viewFile(`output/${id}/${f}`, f);
+                }
+                container.appendChild(el);
+            });
+        }
+
+        async function viewFile(path, filename) {
+            document.getElementById('visualizer-modal').style.display = 'flex';
+            document.getElementById('visualizer-title').innerText = filename;
+            const contentDiv = document.getElementById('visualizer-content');
+            contentDiv.innerText = "Loading...";
+
+            const res = await fetch('/read', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ path }) });
+            const data = await res.json();
+            if (data.success) {
+                currentFileContent = data.content;
+                if (filename.toLowerCase().endsWith('.md')) {
+                    contentDiv.style.fontFamily = 'Inter';
+                    contentDiv.innerHTML = marked.parse(data.content);
+                }
+                else if (filename.toLowerCase().endsWith('.fountain')) {
+                    contentDiv.style.whiteSpace = 'pre-wrap';
+                    contentDiv.style.fontFamily = 'Courier Prime';
+                    contentDiv.innerText = data.content;
+                }
+                else {
+                    contentDiv.style.whiteSpace = 'pre-wrap';
+                    contentDiv.style.fontFamily = 'Courier Prime';
+                    contentDiv.innerText = data.content;
+                }
+            } else { contentDiv.innerText = "Error: " + data.error; }
+        }
+
+        function closeVisualizer() { document.getElementById('visualizer-modal').style.display = 'none'; }
+
+        async function copyToClipboard() {
+            if (!currentFileContent) return;
+            await navigator.clipboard.writeText(currentFileContent);
+            const btn = document.getElementById('copy-btn');
+            btn.innerText = "✅ Saved!";
+            setTimeout(() => btn.innerText = "📋 Copy", 2000);
+        }
+
+        // --- ACTIONS ---
+        async function publish(id) { alert('Building PDF...'); await fetch('/publish', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) }); loadProjects(); }
+        async function exportFDX(id) { alert('Exporting FDX...'); await fetch('/export', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) }); loadProjects(); }
+        async function exportFountain(id) { alert('Exporting Fountain...'); await fetch('/export_fountain', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) }); loadProjects(); }
+
+        // --- SYSTEM ---
+        async function checkStatus() {
+            const res = await fetch('/status');
+            const data = await res.json();
+            apiStatus.innerText = data.has_api_key ? "API: ACTIVE" : "API: DISCONNECTED";
+            apiStatus.className = "api-status " + (data.has_api_key ? "active" : "inactive");
+        }
+
+        async function saveKey() {
+            const key = document.getElementById('api-key-input').value.trim();
+            if (!key) return;
+            await fetch('/save_key', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key }) });
+            location.reload();
+        }
+
+        async function quitApp() {
+            if (!confirm("Completely shut down the application engine?")) return;
+            try { await fetch('/shutdown', { method: 'POST' }); } catch (e) { }
+            document.body.innerHTML = '<div style="background:#000; color:#fff; height:100vh; display:flex; align-items:center; justify-content:center; flex-direction:column; font-family:Inter;"><h1>🔌 Studio Offline</h1><p>The engine has stopped. You can now close this tab.</p></div>';
+        }
+
+        // --- WRITER ---
+        function openWriter() { document.getElementById('writer-modal').style.display = 'flex'; }
+        function closeWriter() { document.getElementById('writer-modal').style.display = 'none'; loadProjects(); }
+
+        function startWriter(usePrompt) {
+            document.getElementById('modal-title').innerText = "Gemini Engine Working...";
+            document.getElementById('start-screen').classList.add('hidden');
+            const console = document.getElementById('console-view');
+            console.classList.remove('hidden');
+            console.innerHTML = '<div class="line">Initializing AI connection...</div>';
+
+            socket.emit('start_writer', {
+                prompt: usePrompt ? document.getElementById('prompt-input').value : null,
+                author: document.getElementById('author-input').value
+            });
+        }
+
+        socket.on('log', (msg) => {
+            const line = document.createElement('div');
+            line.className = 'line';
+            line.innerText = msg.data.replace(/\[[0-9;]*m/g, '');
+            const c = document.getElementById('console-view');
+            c.appendChild(line);
+            c.scrollTop = c.scrollHeight;
+        });
+
+        socket.on('request_input', (msg) => {
+            const area = document.getElementById('interaction-area');
+            area.classList.remove('hidden');
+            document.getElementById('user-response').focus();
+            const line = document.createElement('div');
+            line.style.color = 'var(--accent)';
+            line.innerText = "\nPROMPT: " + msg.prompt;
+            document.getElementById('console-view').appendChild(line);
+        });
+
+        socket.on('writer_finished', () => {
+            const line = document.createElement('div');
+            line.style.color = 'var(--success)';
+            line.innerHTML = "<br>✨ <b>WRITING COMPLETE!</b> Project saved to gallery.";
+            document.getElementById('console-view').appendChild(line);
+        });
+
+        function sendInput() {
+            const input = document.getElementById('user-response');
+            if (!input.value) return;
+            socket.emit('provide_input', { value: input.value });
+            input.value = '';
+            document.getElementById('interaction-area').classList.add('hidden');
+        }
+
+        function openKeySetup() { document.getElementById('key-modal').style.display = 'flex'; }
+        function closeKeySetup() { document.getElementById('key-modal').style.display = 'none'; }
+
+        // Init
+        loadProjects();
+        checkStatus();
+    </script>
+</body>
+
+</html>
